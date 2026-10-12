@@ -1,0 +1,7 @@
+# Links this repository to its BuildBoard project.
+# BuildBoard (the desktop app) reads and writes this project's artifacts at:
+#   <workspace_dir>/<project_id>/
+#
+# Managed by the BuildBoard desktop app — edits may be overwritten.
+project_id: keyboard
+workspace_dir: ~/BuildBoard
