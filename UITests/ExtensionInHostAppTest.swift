@@ -38,7 +38,8 @@ final class ExtensionInHostAppTest: XCTestCase {
         // XCUITest's `keyboards` query only matches the *system* keyboard — a
         // custom keyboard never shows there — so check for either.
         let steadyMarker = safari.buttons["panel-phrases"]
-        let keyboardIsUp = steadyMarker.waitForExistence(timeout: 5)
+        let keyboardIsUp =
+            steadyMarker.waitForExistence(timeout: 5)
             || safari.keyboards.firstMatch.waitForExistence(timeout: 10)
         XCTAssertTrue(keyboardIsUp, "no keyboard appeared at all")
         dismissIntroScreens()
@@ -58,7 +59,7 @@ final class ExtensionInHostAppTest: XCTestCase {
         try XCTSkipUnless(
             steadyMarker.waitForExistence(timeout: 5),
             "Steady isn't an enabled keyboard on this simulator. "
-            + "Run scripts/enable-keyboard-in-simulator.sh first."
+                + "Run scripts/enable-keyboard-in-simulator.sh first."
         )
         shoot("D-steady-active")
 

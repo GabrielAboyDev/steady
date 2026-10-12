@@ -11,16 +11,16 @@ enum ResizeStrength: String, Codable, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .off:        return "Off"
-        case .medium:     return "Medium"
+        case .off: return "Off"
+        case .medium: return "Medium"
         case .aggressive: return "Aggressive"
         }
     }
 
     var explanation: String {
         switch self {
-        case .off:        return "Every key stays the same size."
-        case .medium:     return "Unlikely letters shrink and fade, but stay reachable."
+        case .off: return "Every key stays the same size."
+        case .medium: return "Unlikely letters shrink and fade, but stay reachable."
         case .aggressive: return "Letters that can't continue a word are removed."
         }
     }

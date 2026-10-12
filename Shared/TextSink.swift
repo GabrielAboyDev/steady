@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import Foundation
 
 /// Where typed text goes. The extension writes through `UITextDocumentProxy`
 /// into whatever app the user is in; the practice pad writes into its own

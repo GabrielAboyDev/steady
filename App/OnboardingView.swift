@@ -124,10 +124,12 @@ struct OnboardingView: View {
     private var privacyNote: some View {
         HStack(alignment: .top, spacing: 10) {
             Text("🔒").font(.system(size: 18))
-            Text("No “Allow Full Access” required. All prediction runs on your device — nothing you type ever leaves your phone.")
-                .font(.system(size: 13))
-                .foregroundStyle(Theme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+            Text(
+                "No “Allow Full Access” required. All prediction runs on your device — nothing you type ever leaves your phone."
+            )
+            .font(.system(size: 13))
+            .foregroundStyle(Theme.textSecondary)
+            .fixedSize(horizontal: false, vertical: true)
         }
         .padding(14)
         .background(Theme.brandSoft.opacity(0.55))

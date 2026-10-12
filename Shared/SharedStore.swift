@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import Foundation
 
 /// Everything the container app and the keyboard extension share, persisted as
 /// JSON in the app group. Offline only — no accounts, no network, no sync.

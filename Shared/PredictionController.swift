@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import Foundation
 import PredictiveEngine
 
 /// Drives the keyboard's reshaping: turns the text before the cursor into
@@ -107,9 +107,10 @@ final class PredictionController: ObservableObject {
     }
 
     private func resetToUniform() {
-        keyScales = Dictionary(uniqueKeysWithValues: KeyLayout.allLetters.map {
-            ($0, KeyScale(key: $0, scale: 1.0, isPossible: true))
-        })
+        keyScales = Dictionary(
+            uniqueKeysWithValues: KeyLayout.allLetters.map {
+                ($0, KeyScale(key: $0, scale: 1.0, isPossible: true))
+            })
         topScale = 1.0
     }
 
@@ -123,10 +124,12 @@ final class PredictionController: ObservableObject {
 
     /// The last finished word before the cursor, for next-word prediction.
     static func lastCompletedWord(in context: String) -> String {
-        let tokens = context
+        let tokens =
+            context
             .split(whereSeparator: { $0.isWhitespace })
             .map { token in
-                String(token).trimmingCharacters(in: CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "'")).inverted)
+                String(token).trimmingCharacters(
+                    in: CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "'")).inverted)
             }
             .filter { !$0.isEmpty }
         // If the context ends mid-word, that fragment isn't a completed word.

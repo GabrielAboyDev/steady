@@ -1,0 +1,45 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly, so newly published queries still find old code.
+    - cron: "17 4 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze Swift
+    # Swift analysis requires a macOS runner.
+    runs-on: macos-15
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: swift
+          queries: security-and-quality
+
+      # Autobuild guesses wrong for an iOS project; be explicit.
+      - name: Build
+        run: |
+          xcodebuild build \
+            -project Steady.xcodeproj \
+            -scheme Steady \
+            -destination "generic/platform=iOS Simulator" \
+            CODE_SIGNING_ALLOWED=NO \
+            -quiet
+
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:swift"

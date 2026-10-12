@@ -76,7 +76,7 @@ extension PhraseTemplate {
             slots: [
                 PhraseSlot(name: "name", drawsFromNames: true),
                 PhraseSlot(name: "minutes", options: ["5", "10", "15", "20", "30"], allowsFreeText: true),
-                PhraseSlot(name: "place", options: ["the clinic", "the office", "our meeting", "dinner"])
+                PhraseSlot(name: "place", options: ["the clinic", "the office", "our meeting", "dinner"]),
             ]
         ),
         PhraseTemplate(
@@ -84,7 +84,9 @@ extension PhraseTemplate {
             template: "{name}, could you help me with {task} when you get a chance?",
             slots: [
                 PhraseSlot(name: "name", drawsFromNames: true),
-                PhraseSlot(name: "task", options: ["breakfast", "getting dressed", "my chair", "the phone"], allowsFreeText: true)
+                PhraseSlot(
+                    name: "task", options: ["breakfast", "getting dressed", "my chair", "the phone"],
+                    allowsFreeText: true),
             ]
         ),
         PhraseTemplate(
@@ -92,9 +94,9 @@ extension PhraseTemplate {
             template: "Thanks {name} — I'm feeling {feeling} today.",
             slots: [
                 PhraseSlot(name: "name", drawsFromNames: true),
-                PhraseSlot(name: "feeling", options: ["good", "tired", "much better", "about the same"])
+                PhraseSlot(name: "feeling", options: ["good", "tired", "much better", "about the same"]),
             ]
-        )
+        ),
     ]
 }
 
@@ -181,7 +183,8 @@ final class PhraseFillSession: ObservableObject {
         var slotPosition = 0
 
         while let open = remainder.firstIndex(of: "{"),
-              let close = remainder[open...].firstIndex(of: "}") {
+            let close = remainder[open...].firstIndex(of: "}")
+        {
 
             let literal = String(remainder[remainder.startIndex..<open])
             if !literal.isEmpty { result.append(PhraseSegment(text: literal, kind: .literal)) }

@@ -1,5 +1,5 @@
-import SwiftUI
 import PredictiveEngine
+import SwiftUI
 
 /// Resize aggressiveness and key behaviour (US-006). Everything written here
 /// goes straight into the app group, so the extension picks it up next time it
@@ -40,7 +40,8 @@ struct SettingsView: View {
                     Toggle(isOn: $store.settings.hideImpossibleKeys) {
                         settingLabel(
                             "Hide impossible keys",
-                            detail: "Remove letters that can't continue a word. Off shrinks and fades them instead."
+                            detail:
+                                "Remove letters that can't continue a word. Off shrinks and fades them instead."
                         )
                     }
                     Toggle(isOn: $store.settings.enlargeLikelyKeys) {
@@ -68,11 +69,13 @@ struct SettingsView: View {
                                 .foregroundStyle(Theme.textMuted)
                         }
                     }
-                    Text(store.isSharingThroughAppGroup
-                         ? "Settings are stored in the app group, so the keyboard reads them the next time it opens."
-                         : "The app group isn't available in this build, so the keyboard can't read these settings yet.")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Theme.textSecondary)
+                    Text(
+                        store.isSharingThroughAppGroup
+                            ? "Settings are stored in the app group, so the keyboard reads them the next time it opens."
+                            : "The app group isn't available in this build, so the keyboard can't read these settings yet."
+                    )
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.textSecondary)
                 }
             }
             .navigationTitle("Settings")
@@ -117,7 +120,11 @@ struct ResizePreviewRow: View {
                     let tier = KeyTier.forScale(scale, isPossible: isPossible, topScale: topScale)
 
                     Text(String(key))
-                        .font(.system(size: min(max(11 * scale, 9), 20), weight: tier.isEmphasized ? .bold : .medium))
+                        .font(
+                            .system(
+                                size: min(max(11 * scale, 9), 20), weight: tier.isEmphasized ? .bold : .medium
+                            )
+                        )
                         .foregroundStyle(tier.label)
                         .frame(width: width, height: min(max(26 * scale, 18), 44))
                         .background(

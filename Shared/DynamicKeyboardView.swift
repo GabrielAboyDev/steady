@@ -1,5 +1,5 @@
-import SwiftUI
 import PredictiveEngine
+import SwiftUI
 
 /// Which set of keys is showing.
 enum KeyPlane {
@@ -156,7 +156,10 @@ struct DynamicKeyboardView: View {
                     .padding(.horizontal, keySpacing / 2)
 
                 Text(label)
-                    .font(.system(size: fontSize(for: metrics), weight: metrics.tier.isEmphasized ? .bold : .medium))
+                    .font(
+                        .system(
+                            size: fontSize(for: metrics), weight: metrics.tier.isEmphasized ? .bold : .medium)
+                    )
                     .foregroundStyle(metrics.tier.label)
                     .minimumScaleFactor(0.6)
             }

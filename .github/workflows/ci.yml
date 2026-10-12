@@ -1,0 +1,117 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    name: Format
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: xcrun swift-format --version
+
+      # PredictiveEngine and UITests/SteadyUITests.swift are deliberately
+      # absent: the dictionary refactor is in flight there. Add them back once
+      # it lands and the formatter has been run across it.
+      - name: Check formatting
+        run: |
+          xcrun swift-format lint --recursive --strict \
+            App Shared KeyboardExtension \
+            UITests/ExtensionInHostAppTest.swift
+
+      - name: How to fix
+        if: failure()
+        run: |
+          echo "Run this locally and commit the result:"
+          echo "  xcrun swift-format format --in-place --recursive \\"
+          echo "    App Shared KeyboardExtension UITests/ExtensionInHostAppTest.swift"
+
+  security:
+    name: Security
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Privacy and supply-chain invariants
+        run: python3 scripts/check-privacy-invariants.py
+
+  test:
+    name: Test
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Engine unit tests
+        working-directory: PredictiveEngine
+        run: swift test
+
+      - name: Pick a simulator
+        id: sim
+        run: |
+          udid=$(xcrun simctl list devices available --json | python3 -c "
+          import json, sys
+          devices = json.load(sys.stdin)['devices']
+          candidates = [
+              device
+              for runtime, entries in devices.items() if 'iOS' in runtime
+              for device in entries if device.get('isAvailable') and 'iPhone' in device['name']
+          ]
+          if not candidates:
+              sys.exit('no iPhone simulator available on this runner')
+          print(candidates[-1]['udid'])
+          ")
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+          xcrun simctl list devices | grep "$udid"
+
+      - name: Enable the keyboard system-wide
+        run: |
+          # Boot once so the simulator writes its preference files, then let the
+          # script enable Steady the way a user would in Settings.
+          xcrun simctl boot "${{ steps.sim.outputs.udid }}" || true
+          xcrun simctl bootstatus "${{ steps.sim.outputs.udid }}"
+          scripts/enable-keyboard-in-simulator.sh "${{ steps.sim.outputs.udid }}"
+
+      - name: UI tests
+        run: |
+          xcodebuild test \
+            -project Steady.xcodeproj \
+            -scheme Steady \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -resultBundlePath TestResults.xcresult
+
+      - name: Release build
+        run: |
+          xcodebuild build \
+            -project Steady.xcodeproj \
+            -scheme Steady \
+            -destination "generic/platform=iOS Simulator" \
+            -configuration Release \
+            CODE_SIGNING_ALLOWED=NO \
+            -quiet
+
+      - name: Upload results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults.xcresult
+          retention-days: 7

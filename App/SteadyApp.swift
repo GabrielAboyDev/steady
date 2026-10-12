@@ -8,11 +8,11 @@ struct SteadyApp: App {
 
     init() {
         #if DEBUG
-        // UI tests launch with this flag so each test starts from the seeds
-        // rather than whatever the previous test left in the app group.
-        if ProcessInfo.processInfo.arguments.contains("-UITestResetState") {
-            SharedStore.shared.resetToSeeds()
-        }
+            // UI tests launch with this flag so each test starts from the seeds
+            // rather than whatever the previous test left in the app group.
+            if ProcessInfo.processInfo.arguments.contains("-UITestResetState") {
+                SharedStore.shared.resetToSeeds()
+            }
         #endif
     }
 

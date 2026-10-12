@@ -11,16 +11,16 @@ enum KeyboardPanel: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .keyboard: return "Keyboard"
-        case .names:    return "Names"
-        case .phrases:  return "Phrases"
+        case .names: return "Names"
+        case .phrases: return "Phrases"
         }
     }
 
     var glyph: String {
         switch self {
         case .keyboard: return "⌨"
-        case .names:    return "👤"
-        case .phrases:  return "💬"
+        case .names: return "👤"
+        case .phrases: return "💬"
         }
     }
 }

@@ -26,7 +26,9 @@ struct PhrasesEditorView: View {
                         store.phrases.remove(atOffsets: offsets)
                     }
                 } footer: {
-                    Text("Write a blank as {name}, {minutes}, {place} — anything in braces becomes a blank you fill in when you use the phrase. A {name} blank offers your saved names.")
+                    Text(
+                        "Write a blank as {name}, {minutes}, {place} — anything in braces becomes a blank you fill in when you use the phrase. A {name} blank offers your saved names."
+                    )
                 }
 
                 Section {
@@ -78,18 +80,21 @@ private struct PhraseEditor: View {
                     Toggle("Use my saved names", isOn: $slot.drawsFromNames)
 
                     if slot.drawsFromNames {
-                        Text(nameOptions.isEmpty
-                             ? "No saved names yet — add some on the Names tab."
-                             : nameOptions.joined(separator: ", "))
-                            .font(.system(size: 12))
-                            .foregroundStyle(Theme.textMuted)
+                        Text(
+                            nameOptions.isEmpty
+                                ? "No saved names yet — add some on the Names tab."
+                                : nameOptions.joined(separator: ", ")
+                        )
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.textMuted)
                     } else {
                         TextField(
                             "Options, separated by commas",
                             text: Binding(
                                 get: { slot.options.joined(separator: ", ") },
                                 set: { newValue in
-                                    slot.options = newValue
+                                    slot.options =
+                                        newValue
                                         .split(separator: ",")
                                         .map { $0.trimmingCharacters(in: .whitespaces) }
                                         .filter { !$0.isEmpty }
