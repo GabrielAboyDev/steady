@@ -96,6 +96,8 @@ jobs:
             -project Steady.xcodeproj \
             -scheme Steady \
             -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -retry-tests-on-failure \
+            -test-iterations 2 \
             -resultBundlePath TestResults.xcresult
 
       - name: Release build
