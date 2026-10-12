@@ -77,28 +77,55 @@ jobs:
           ]
           if not candidates:
               sys.exit('no iPhone simulator available on this runner')
-          print(candidates[-1]['udid'])
+          # Prefer a current, full-size iPhone; fall back to whatever exists.
+          preferred = [d for d in candidates if 'SE' not in d['name'] and 'mini' not in d['name']]
+          print((preferred or candidates)[-1]['udid'])
           ")
           echo "udid=$udid" >> "$GITHUB_OUTPUT"
           xcrun simctl list devices | grep "$udid"
 
-      - name: Enable the keyboard system-wide
+      - name: Build for testing
         run: |
-          # Boot once so the simulator writes its preference files, then let the
-          # script enable Steady the way a user would in Settings.
+          xcodebuild build-for-testing \
+            -project Steady.xcodeproj \
+            -scheme Steady \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath DerivedData \
+            -quiet
+
+      # The app has to be installed before the keyboard is enabled: iOS ignores
+      # a keyboard whose containing app isn't present, so enabling first leaves
+      # the preference set but the keyboard unusable, and the extension test
+      # quietly skips itself.
+      - name: Install the app, then enable the keyboard
+        run: |
           xcrun simctl boot "${{ steps.sim.outputs.udid }}" || true
           xcrun simctl bootstatus "${{ steps.sim.outputs.udid }}"
+          xcrun simctl install "${{ steps.sim.outputs.udid }}" \
+            DerivedData/Build/Products/Debug-iphonesimulator/Steady.app
           scripts/enable-keyboard-in-simulator.sh "${{ steps.sim.outputs.udid }}"
 
       - name: UI tests
         run: |
-          xcodebuild test \
+          xcodebuild test-without-building \
             -project Steady.xcodeproj \
             -scheme Steady \
             -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath DerivedData \
             -retry-tests-on-failure \
             -test-iterations 2 \
             -resultBundlePath TestResults.xcresult
+
+      # A skip here means the keyboard never became available, which would make
+      # the whole extension check silently vacuous. Fail instead.
+      - name: Fail if the extension test was skipped
+        run: |
+          if xcrun xcresulttool get test-results tests --path TestResults.xcresult --format json \
+             | grep -q '"testStatus"[[:space:]]*:[[:space:]]*"Skipped"'; then
+            echo "A test was skipped — the keyboard extension check did not actually run."
+            exit 1
+          fi
+          echo "No skipped tests."
 
       - name: Release build
         run: |

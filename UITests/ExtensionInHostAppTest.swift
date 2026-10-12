@@ -47,7 +47,11 @@ final class ExtensionInHostAppTest: XCTestCase {
 
         // If some other keyboard is up, cycle with the globe until Steady shows.
         var switches = 0
-        while !steadyMarker.exists && switches < 4 {
+        while !steadyMarker.exists && switches < 5 {
+            // iOS shows a "Quickly Change Keyboards" notice the first time a
+            // device has more than one keyboard, and it sits exactly where the
+            // globe key is — so clear notices on every pass, not just once.
+            dismissIntroScreens()
             let globe = safari.buttons["Next keyboard"]
             if globe.waitForExistence(timeout: 5) {
                 globe.tap()

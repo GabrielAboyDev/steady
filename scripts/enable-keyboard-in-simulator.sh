@@ -45,14 +45,12 @@ for key in DidShowContinuousPathIntroduction KeyboardDidShowProductivityTutorial
 done
 echo "Suppressed system keyboard intro screens"
 
-SIMPREFS="$HOME/Library/Preferences/com.apple.iphonesimulator.plist"
-if [ ! -f "$SIMPREFS" ]; then
-  /usr/libexec/PlistBuddy -c "Save" "$SIMPREFS"
-fi
-/usr/libexec/PlistBuddy -c "Delete :DevicePreferences:$DEVICE:ConnectHardwareKeyboard" "$SIMPREFS" 2>/dev/null || true
-/usr/libexec/PlistBuddy -c "Add :DevicePreferences dict" "$SIMPREFS" 2>/dev/null || true
-/usr/libexec/PlistBuddy -c "Add :DevicePreferences:$DEVICE dict" "$SIMPREFS" 2>/dev/null || true
-/usr/libexec/PlistBuddy -c "Add :DevicePreferences:$DEVICE:ConnectHardwareKeyboard bool false" "$SIMPREFS"
+# This one is a host preference owned by Simulator.app, so it has to go through
+# `defaults` rather than editing the plist: cfprefsd caches the file and will
+# happily overwrite a direct edit, leaving the hardware keyboard connected and
+# no software keyboard ever appearing.
+defaults write com.apple.iphonesimulator DevicePreferences -dict-add "$DEVICE" \
+  '{ConnectHardwareKeyboard = 0;}'
 echo "Disabled hardware keyboard"
 
 xcrun simctl boot "$DEVICE"
