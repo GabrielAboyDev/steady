@@ -1,19 +1,35 @@
 import Foundation
 
-/// On-device predictive text engine backed by a frequency-weighted prefix trie
-/// plus a small next-word (bigram) model. Fully offline — no network, no
-/// "Full Access" required when embedded in a keyboard extension.
-public final class PredictiveEngine {
+/// On-device predictive text engine backed by a compiled, memory-mapped
+/// dictionary (`.sdict`): a frequency-weighted byte trie plus a next-word
+/// (bigram) table. Fully offline — no network, no "Full Access" required when
+/// embedded in a keyboard extension.
+///
+/// The bundled dictionary is never parsed into Swift objects. Opening it maps
+/// the file; each query touches only the pages it walks, so memory stays flat
+/// no matter how large the word list grows.
+public final class PredictiveEngine: Sendable {
 
-    private let trie = Trie()
-    private let bigrams: BigramModel
+    private let dictionary: MappedDictionary
 
     /// Build an engine from a lexicon of `(word, frequency)` pairs.
+    ///
+    /// Compiles the lexicon in memory through the same format the bundled
+    /// dictionary uses, so callers and tests exercise the real read path.
     public init(lexicon: [(word: String, frequency: Double)], bigrams: BigramModel = BigramModel()) {
-        self.bigrams = bigrams
-        for entry in lexicon {
-            trie.insert(entry.word.lowercased(), frequency: entry.frequency)
-        }
+        let data = DictionaryBuilder.build(lexicon: lexicon, bigrams: bigrams)
+        // The builder's output is valid by construction.
+        self.dictionary = try! MappedDictionary(data: data)
+    }
+
+    /// Open a compiled `.sdict` from raw bytes. Throws if the header is not valid.
+    public init(data: Data) throws {
+        self.dictionary = try MappedDictionary(data: data)
+    }
+
+    /// Memory-map a compiled `.sdict` file.
+    public convenience init(contentsOf url: URL) throws {
+        try self.init(data: try Data(contentsOf: url, options: .mappedIfSafe))
     }
 
     // MARK: Completions
@@ -21,18 +37,7 @@ public final class PredictiveEngine {
     /// Top word completions for a prefix, best first.
     /// An empty prefix returns the globally most frequent words.
     public func completions(forPrefix prefix: String, limit: Int = 5) -> [WordScore] {
-        let normalized = prefix.lowercased()
-        guard let start = trie.node(forPrefix: normalized) else { return [] }
-
-        var results: [WordScore] = []
-        var stack: [TrieNode] = [start]
-        while let node = stack.popLast() {
-            if node.isTerminal, let word = node.word {
-                results.append(WordScore(word: word, score: node.wordFrequency))
-            }
-            for child in node.children.values { stack.append(child) }
-        }
-        return Array(results.sorted { $0.score > $1.score }.prefix(limit))
+        dictionary.completions(forPrefix: prefix, limit: limit)
     }
 
     // MARK: Next-letter prediction (drives key resizing)
@@ -40,13 +45,7 @@ public final class PredictiveEngine {
     /// Raw weight for each letter that can legally follow `prefix`.
     /// The weight is the aggregate frequency of all words continuing through that letter.
     public func nextLetterWeights(forPrefix prefix: String) -> [Character: Double] {
-        let normalized = prefix.lowercased()
-        guard let node = trie.node(forPrefix: normalized) else { return [:] }
-        var weights: [Character: Double] = [:]
-        for (character, child) in node.children {
-            weights[character] = child.aggregateFrequency
-        }
-        return weights
+        dictionary.nextLetterWeights(forPrefix: prefix)
     }
 
     /// Convenience: go straight from a prefix to per-key display scales.
@@ -63,52 +62,22 @@ public final class PredictiveEngine {
 
     /// Likely next words after a completed word (used right after a space).
     public func predictNextWord(after previousWord: String, limit: Int = 3) -> [WordScore] {
-        bigrams.predict(after: previousWord, limit: limit)
+        dictionary.predictNextWord(after: previousWord, limit: limit)
     }
 
     // MARK: Loading
 
-    enum LoadError: Error { case resourceMissing }
+    public enum LoadError: Error { case resourceMissing }
 
-    /// Build an engine from the lexicon bundled in the package's Resources.
-    /// Words are listed one per line in descending frequency; rank becomes a
-    /// Zipf-style weight (1 / rank).
+    /// Name of the dictionary resource bundled with the package.
+    public static let bundledDictionaryName = "en"
+
+    /// Open the dictionary bundled in the package's Resources (built offline by
+    /// `sdict-compile`; see `scripts/build-dictionary.sh`).
     public static func loadBundled() throws -> PredictiveEngine {
-        guard let url = Bundle.module.url(forResource: "words", withExtension: "txt") else {
+        guard let url = Bundle.module.url(forResource: bundledDictionaryName, withExtension: "sdict") else {
             throw LoadError.resourceMissing
         }
-        let text = try String(contentsOf: url, encoding: .utf8)
-        var lexicon: [(word: String, frequency: Double)] = []
-        var rank = 0
-        for rawLine in text.split(whereSeparator: \.isNewline) {
-            let word = rawLine.trimmingCharacters(in: .whitespaces).lowercased()
-            guard !word.isEmpty, !word.hasPrefix("#") else { continue }
-            rank += 1
-            lexicon.append((word, 1.0 / Double(rank)))
-        }
-        return PredictiveEngine(lexicon: lexicon, bigrams: seededBigrams())
-    }
-
-    /// A tiny seed table so next-word suggestions work in Phase 1.
-    static func seededBigrams() -> BigramModel {
-        let model = BigramModel()
-        let seeds: [String: [String]] = [
-            "i": ["am", "will", "have", "think", "was"],
-            "the": ["same", "first", "other", "best", "way"],
-            "how": ["are", "to", "do", "much", "many"],
-            "what": ["is", "are", "do", "time", "about"],
-            "thank": ["you"],
-            "let": ["me", "us"],
-            "see": ["you"],
-            "i'm": ["going", "not", "just", "sorry"],
-            "can": ["you", "i", "we"],
-            "please": ["let", "call", "help"]
-        ]
-        for (previous, nexts) in seeds {
-            for (index, next) in nexts.enumerated() {
-                model.add(previous: previous, next: next, count: Double(nexts.count - index))
-            }
-        }
-        return model
+        return try PredictiveEngine(contentsOf: url)
     }
 }

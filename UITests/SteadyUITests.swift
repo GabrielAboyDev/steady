@@ -35,7 +35,7 @@ final class SteadyUITests: XCTestCase {
 
         typeKeys("th")
 
-        // Only a, e, i, o, r, u, w, y can follow "th" in the bundled lexicon.
+        // In the bundled dictionary only a, c, e, i, l, o, r, u, w, y can follow "th".
         XCTAssertTrue(app.buttons["e"].exists, "e must stay — it's the likeliest continuation")
         XCTAssertFalse(app.buttons["q"].exists, "q cannot continue \"th\" and must be hidden")
         XCTAssertFalse(app.buttons["z"].exists, "z cannot continue \"th\" and must be hidden")

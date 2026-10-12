@@ -22,3 +22,6 @@ Package.resolved
 # Local market research — not part of the public repo.
 # To publish it: remove this line and `git add -f research/`
 research/
+
+# Downloaded dictionary source lists (see scripts/build-dictionary.sh)
+PredictiveEngine/corpus/

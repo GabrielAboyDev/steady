@@ -14,7 +14,7 @@ Everything runs on the device. No network calls, and no "Allow Full Access" perm
 
 | Path | What it is |
 |---|---|
-| `PredictiveEngine/` | The prediction engine as a standalone Swift package — a frequency-weighted prefix trie, a bigram next-word model, and the key-resize layout maths. No UIKit, no SwiftUI, fully unit tested. |
+| `PredictiveEngine/` | The prediction engine as a standalone Swift package — a compiled, memory-mapped dictionary (`en.sdict`: a frequency-weighted byte trie plus a bigram next-word table) and the key-resize layout maths. No UIKit, no SwiftUI, fully unit tested. |
 | `Shared/` | The keyboard UI and shared state, compiled into **both** targets. Writes through a `TextSink` protocol so the same code backs the real keyboard and the in-app practice pad. |
 | `KeyboardExtension/` | The system-wide keyboard extension. Hosts the shared surface and types through `UITextDocumentProxy`. |
 | `App/` | The container app: enable-the-keyboard onboarding, settings, practice pad, and the editors for saved names and phrases. |
@@ -28,9 +28,15 @@ then into a display scale per key:
 ```swift
 let engine = try PredictiveEngine.loadBundled()
 engine.completions(forPrefix: "th", limit: 3)      // the, that, this
-engine.nextLetterWeights(forPrefix: "th")          // only a e i o r u w y are possible
+engine.nextLetterWeights(forPrefix: "th")          // weight per letter that can follow
 engine.keyScales(forPrefix: "th", config: .motorAccessibility)
 ```
+
+The dictionary is never parsed into memory. `scripts/build-dictionary.sh` compiles a
+~47k-word frequency list and ~80k bigrams into `PredictiveEngine/Sources/PredictiveEngine/Resources/en.sdict`
+(about 2.7 MB, committed). At runtime the file is memory-mapped and each keystroke reads only
+the trie nodes it walks, so the keyboard extension's footprint stays flat however large the
+word list grows. Sources and licenses are listed in `Resources/LICENSES.md` next to the file.
 
 A scale of `0` means the key is impossible and gets removed from the row. Scales above
 `1.0` grow the key in place — rows keep a fixed height and keys never reorder, so a key
