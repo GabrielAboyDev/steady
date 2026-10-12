@@ -2,6 +2,11 @@
 
 An iOS keyboard that reshapes itself as you type.
 
+**Now in open beta.** [Join on TestFlight](https://testflight.apple.com/join/VVBRJSdn) ·
+[steady site](https://steadykeyboard.com/) ·
+[support](https://steadykeyboard.com/support.html) ·
+[privacy](https://steadykeyboard.com/privacy.html)
+
 Steady is built for people who type on a touchscreen but miss keys — tremor, limited
 dexterity, single-finger or switch use. An on-device language model knows that after each
 letter only a limited set of words remains possible, so Steady **enlarges the letters most
@@ -87,7 +92,18 @@ neither of which can be scripted any other way.
 > The bundle identifier prefix (`com.gabrielaboy.steady`) and the app group are placeholders.
 > Point them at a domain you control before distributing.
 
+## The site
+
+`docs/` is the GitHub Pages site: the landing page, the support page App Store Connect
+points at, and the privacy policy. The landing page carries a live keyboard
+(`docs/keyboard-demo.js`) that ports `KeyLayout.keyScales`, the tier colours and the three
+strength profiles to JavaScript, over the top 6,000 words of the same frequency list the
+dictionary is compiled from. **Change the resize maths in `PredictiveEngine` and that demo
+needs the same change**, or the site stops telling the truth about the app. Everything the
+site needs — typeface included — is served from `docs/`; it makes no third-party requests.
+
 ## Status
 
-MVP in development. The prediction engine, the dynamic keyboard, suggestion chips, settings,
-practice pad, names, and phrases are built and tested. Not yet submitted to the App Store.
+**Open beta**, distributed through TestFlight with a public link. The prediction engine, the
+dynamic keyboard, suggestion chips, settings, practice pad, names, and phrases are built and
+tested. English only. Not yet submitted to the App Store for public release.

@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Steady — Support</title>
+<meta name="description" content="Support for Steady: installing the open beta, enabling the keyboard, choosing how much the keys resize, names and phrases, and how to report a problem.">
+<link rel="canonical" href="https://steadykeyboard.com/support.html">
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="icon.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#1C6E68">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="index.html">
+      <img src="icon.png" alt="" width="30" height="30">
+      Steady
+    </a>
+    <nav class="navlinks" aria-label="Site">
+      <a href="index.html#demo">Try it</a>
+      <a href="index.html#how">How it works</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="support.html" aria-current="page">Support</a>
+    </nav>
+    <a class="btn btn-primary btn-sm" href="https://testflight.apple.com/join/VVBRJSdn">Join the beta</a>
+  </div>
+</header>
+
+<div class="page-head">
+  <div class="wrap prose">
+    <h1>Support</h1>
+    <p>Installing the beta, enabling the keyboard, and getting help.</p>
+  </div>
+</div>
+
+<main id="main" class="doc">
+  <div class="wrap prose">
+
+    <nav class="toc" aria-label="On this page">
+      <strong>On this page</strong>
+      <ul>
+        <li><a href="#install">Installing the open beta</a></li>
+        <li><a href="#enable">Enabling the keyboard</a></li>
+        <li><a href="#resize">Choosing how much the keys resize</a></li>
+        <li><a href="#chips">The suggestion chips</a></li>
+        <li><a href="#names">Names and phrases</a></li>
+        <li><a href="#trouble">Troubleshooting</a></li>
+        <li><a href="#help">Reporting a problem</a></li>
+        <li><a href="#credits">Credits</a></li>
+      </ul>
+    </nav>
+
+    <h2 id="install">Installing the open beta</h2>
+    <p>Steady is distributed through Apple’s TestFlight. Anyone can join — no invite
+    code, no waiting list.</p>
+    <ol>
+      <li>Install <strong>TestFlight</strong> from the App Store, if you don’t have it.</li>
+      <li>Open <a href="https://testflight.apple.com/join/VVBRJSdn">the Steady beta link</a>
+      on your iPhone or iPad and tap <strong>Accept</strong>.</li>
+      <li>Tap <strong>Install</strong>. Steady appears on your Home Screen like any app.</li>
+    </ol>
+    <p>You need iOS 16 or later. Beta builds expire after 90 days; TestFlight will
+    prompt you to update before that happens.</p>
+
+    <h2 id="enable">Enabling the keyboard</h2>
+    <p>iOS does not let an app add a keyboard on its own — you have to turn it on in
+    Settings. The Steady app walks you through this on first launch, and here it is
+    in full:</p>
+    <ol>
+      <li>Open <strong>Settings › General › Keyboard › Keyboards</strong>.</li>
+      <li>Tap <strong>Add New Keyboard…</strong> and choose <strong>Steady</strong>.</li>
+      <li>In any app, press and hold the globe key (🌐) and pick <strong>Steady</strong>.</li>
+    </ol>
+    <div class="note">
+      <p><strong>Do not grant “Allow Full Access”.</strong> Steady never needs it, and
+      will not ask. That permission is what allows a keyboard to reach the network;
+      without it, your typing physically cannot leave your device.</p>
+    </div>
+    <p>Want to practise before using it for real? The Steady app has a
+    <strong>practice pad</strong> with the same keyboard inside it.</p>
+
+    <h2 id="resize">Choosing how much the keys resize</h2>
+    <p>Open the Steady app and go to <strong>Settings</strong>. The resize strength
+    sets how far keys are allowed to grow and shrink:</p>
+    <ul>
+      <li><strong>Off</strong> — every key stays the same size. Predictions still
+      appear on the chips above the keys.</li>
+      <li><strong>Medium</strong> — likely letters grow a little; unlikely ones shrink
+      and fade.</li>
+      <li><strong>Aggressive</strong> — the same idea across a much wider size range,
+      so the likeliest letter is close to twice its normal width. This is the default.</li>
+    </ul>
+    <p>Two switches sit underneath:</p>
+    <ul>
+      <li><strong>Remove impossible keys</strong> (on by default) — letters that cannot
+      continue any word leave the row entirely, so a stray tap can’t land on them.
+      Turn it off and they stay in place, shrunken and faded, instead.</li>
+      <li><strong>Enlarge likely keys</strong> (on by default) — turn it off to keep
+      every key at its normal size or smaller, never larger.</li>
+    </ul>
+    <p>Whatever the setting, rows keep a fixed height and keys keep their order, so a
+    key you are reaching for will not move out from under you.</p>
+
+    <h2 id="chips">The suggestion chips</h2>
+    <p>Three large chips sit above the keys. Partway through a word they offer
+    completions; right after a space they offer likely next words. Tapping one inserts
+    the whole word and a space. Steady never swaps a word out on its own — if you
+    don’t tap a chip, what you typed is what you get. You can hide the chips entirely
+    in Settings.</p>
+
+    <h2 id="names">Names and phrases</h2>
+    <ul>
+      <li><strong>Names</strong> — saved entries that insert exactly as written, for
+      proper nouns prediction will never guess: people, places, medications, your
+      street.</li>
+      <li><strong>Phrases</strong> — sentence templates with fill-in-the-blank slots,
+      such as <em>“Can you pass me the {thing}?”</em>. A name slot draws from your
+      Names list. Picking a phrase walks you through each blank with large chips, then
+      inserts the finished sentence.</li>
+    </ul>
+    <p>Both are edited in the Steady app and are available in the keyboard
+    immediately.</p>
+
+    <h2 id="trouble">Troubleshooting</h2>
+    <h3>The keys aren’t resizing</h3>
+    <p>Check that resize strength isn’t set to <strong>Off</strong>. In password and
+    other secure fields, Steady deliberately falls back to a plain, fixed layout — the
+    reshaping would otherwise reveal something about what you are typing.</p>
+    <h3>Steady isn’t in the globe menu</h3>
+    <p>It has to be added in <strong>Settings › General › Keyboard › Keyboards</strong>
+    first — see <a href="#enable">enabling the keyboard</a> above. If it is listed
+    there but still missing, restarting the device usually settles it.</p>
+    <h3>My names or phrases aren’t showing up</h3>
+    <p>They are shared between the app and the keyboard through a private container.
+    Switching away from Steady and back refreshes it.</p>
+    <h3>The keyboard forgot my settings after an update</h3>
+    <p>Settings survive updates, but not deleting the app. Reinstalling a TestFlight
+    build over the top keeps them; removing the app first does not.</p>
+
+    <h2 id="help">Reporting a problem</h2>
+    <p>Beta feedback is the whole point of this phase, and small reports are welcome.</p>
+    <ul>
+      <li><strong>From TestFlight</strong> — open the TestFlight app, choose Steady,
+      and tap <strong>Send Beta Feedback</strong>. It attaches a screenshot and your
+      device and iOS version automatically. You can also take a screenshot inside
+      Steady and tap <em>Share Beta Feedback</em>.</li>
+      <li><strong>On GitHub</strong> — open an issue at
+      <a href="https://github.com/GabrielAboyDev/steady/issues">github.com/GabrielAboyDev/steady/issues</a>.</li>
+    </ul>
+    <p>Useful things to include: what app you were typing in, what you expected, what
+    happened instead, and your resize strength setting.</p>
+
+    <h2 id="credits">Credits</h2>
+    <p>Steady is built on openly licensed work:</p>
+    <ul>
+      <li><strong>Word frequencies</strong> —
+      <a href="https://github.com/hermitdave/FrequencyWords">FrequencyWords</a> by hermitdave,
+      derived from the OpenSubtitles 2018 corpus, licensed
+      <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC-BY-SA 4.0</a>. The word
+      list embedded in this site’s keyboard demo is derived from it and carries the same
+      licence.</li>
+      <li><strong>Next-word pairs</strong> — <code>count_2w.txt</code> from
+      <a href="https://norvig.com/ngrams/">Peter Norvig’s n-gram collection</a>, from the
+      Google Web Trillion Word Corpus.</li>
+      <li><strong>Typeface</strong> —
+      <a href="https://brailleinstitute.org/freefont">Atkinson Hyperlegible</a>, designed by
+      the Braille Institute of America for low-vision legibility, under the
+      <a href="fonts/OFL.txt">SIL Open Font License 1.1</a>.</li>
+    </ul>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span class="brand">Steady</span>
+    <nav class="footer-links" aria-label="Footer">
+      <a href="index.html">Home</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="https://testflight.apple.com/join/VVBRJSdn">TestFlight</a>
+      <a href="https://github.com/GabrielAboyDev/steady">Source on GitHub</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

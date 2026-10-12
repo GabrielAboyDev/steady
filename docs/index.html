@@ -3,73 +3,232 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Steady — Support</title>
-<meta name="description" content="Support for Steady, an iOS keyboard that enlarges the keys you are most likely to need next.">
+<title>Steady — a keyboard that reshapes itself as you type</title>
+<meta name="description" content="Steady is an iPhone and iPad keyboard for people who miss keys. After every letter it enlarges the letters that can still follow and removes the ones that can't. Now in open beta on TestFlight.">
+<link rel="canonical" href="https://steadykeyboard.com/">
 <link rel="stylesheet" href="styles.css">
+<link rel="icon" href="icon.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#1C6E68">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Steady — a keyboard that reshapes itself as you type">
+<meta property="og:description" content="An iPhone and iPad keyboard for people who miss keys. The letters that can come next get bigger. Now in open beta.">
+<meta property="og:url" content="https://steadykeyboard.com/">
+<meta property="og:image" content="https://steadykeyboard.com/icon.png">
+<meta name="twitter:card" content="summary">
 </head>
 <body>
-<header>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
   <div class="wrap">
-    <span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>
-    <div>
-      <h1>Steady</h1>
-      <p>A keyboard that reshapes itself as you type</p>
-    </div>
+    <a class="brand" href="index.html">
+      <img src="icon.png" alt="" width="30" height="30">
+      Steady
+    </a>
+    <nav class="navlinks" aria-label="Site">
+      <a href="#demo">Try it</a>
+      <a href="#how">How it works</a>
+      <a href="#privacy">Privacy</a>
+      <a href="support.html">Support</a>
+    </nav>
+    <a class="btn btn-primary btn-sm" href="https://testflight.apple.com/join/VVBRJSdn">Join the beta</a>
   </div>
 </header>
 
-<main class="wrap">
-  <p>Steady is an iOS keyboard built for people who type on a touchscreen but miss
-  keys — tremor, limited dexterity, single-finger or switch use. As you type, it
-  enlarges the letters most likely to come next and shrinks or removes the ones
-  that cannot follow, so your tap targets grow as the word narrows.</p>
+<main id="main">
 
-  <div class="note">
-    <p><strong>Everything runs on your device.</strong> Steady makes no network
-    calls and never asks for “Allow Full Access”. Nothing you type leaves your
-    iPhone or iPad.</p>
+<section class="hero on-dark">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="badge"><span class="dot" aria-hidden="true"></span> Open beta — now on TestFlight</p>
+      <h1>The keys you need next get bigger.</h1>
+      <p class="lede">Steady is an iPhone and iPad keyboard for anyone who misses keys —
+      tremor, limited dexterity, one finger, a switch. After every letter it grows the
+      letters that can still follow and clears away the ones that can’t, so your tap
+      targets widen as the word narrows.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://testflight.apple.com/join/VVBRJSdn">Join the open beta</a>
+        <a class="btn btn-ghost" href="#demo">Try it right here</a>
+      </div>
+      <p class="fineprint">
+        <span>Free.</span> <span>iPhone and iPad, iOS 16 or later.</span>
+        <span>No account.</span> <span>No “Allow Full Access”.</span>
+      </p>
+    </div>
+
+    <div id="demo" class="demo-wrap" data-loading tabindex="0" role="group"
+         aria-label="Interactive demo keyboard. Type letters to watch the keys resize.">
+      <div class="device">
+        <div class="screen">
+          <div class="screen-bar">Practice pad</div>
+          <p class="field" data-field role="status" aria-live="polite" aria-atomic="true"></p>
+          <div class="chips" data-chips role="group" aria-label="Word suggestions"></div>
+          <div class="tray" data-tray role="group" aria-label="Keyboard"></div>
+        </div>
+      </div>
+      <div class="demo-foot">
+        <div class="seg" data-seg role="group" aria-label="Resize strength">
+          <button type="button" data-profile="off" aria-pressed="false">Off</button>
+          <button type="button" data-profile="medium" aria-pressed="false">Medium</button>
+          <button type="button" data-profile="aggressive" aria-pressed="true">Aggressive</button>
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" data-play aria-pressed="false">Watch it type</button>
+      </div>
+      <noscript><p class="nojs-note">The live keyboard needs JavaScript. Everything it shows, the app does on your device without a network.</p></noscript>
+      <p class="demo-hint">Tap the keys, or click the keyboard and use your own.
+      This runs the same prediction maths as the app.</p>
+    </div>
   </div>
+</section>
 
-  <h2>Setting up the keyboard</h2>
-  <ol>
-    <li>Open the <strong>Steady</strong> app.</li>
-    <li>Go to <strong>Settings › General › Keyboard › Keyboards › Add New Keyboard</strong>
-    and choose <strong>Steady</strong>.</li>
-    <li>In any app, press and hold the globe key (🌐) to switch to Steady.</li>
-  </ol>
-  <p>You do <em>not</em> need to grant Full Access. Steady works entirely without it.</p>
+<section id="how">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">How it works</p>
+      <h2>After each letter, only a few words are still possible.</h2>
+      <p>Steady works out which ones, and hands the keyboard over to the letters that
+      can still get you there.</p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <span class="step-no" aria-hidden="true">1</span>
+        <h3>It reads the word you are in</h3>
+        <p>Only the letters between the last space and your cursor. They are used in
+        memory, on your device, and discarded as soon as the next key is drawn.</p>
+      </div>
+      <div class="card">
+        <span class="step-no" aria-hidden="true">2</span>
+        <h3>It finds every word that still fits</h3>
+        <p>A 47,000-word dictionary ships inside the app as a compiled trie. Type
+        <strong>toget</strong> and exactly one letter in the alphabet can follow it —
+        so that key gets the row to itself.</p>
+      </div>
+      <div class="card">
+        <span class="step-no" aria-hidden="true">3</span>
+        <h3>It resizes the keys</h3>
+        <p>Likely letters grow in place. Impossible ones shrink away or leave the row
+        entirely, so there is nothing there to mis-hit.</p>
+      </div>
+    </div>
+  </div>
+</section>
 
-  <h2>Choosing how much the keys resize</h2>
-  <p>Open the Steady app and go to Settings. There are three profiles:</p>
-  <ul>
-    <li><strong>Off</strong> — keys stay a fixed size; predictions still appear in the suggestion bar.</li>
-    <li><strong>Medium</strong> — unlikely letters shrink and fade.</li>
-    <li><strong>Aggressive</strong> — impossible letters are removed from the row entirely.</li>
-  </ul>
-  <p>Rows keep a fixed height and keys never reorder, so a key you are reaching
-  for will not move out from under you.</p>
+<section class="alt">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Built around the miss</p>
+      <h2>Designed so the keyboard never works against you.</h2>
+    </div>
+    <div class="cards two">
+      <div class="card">
+        <h3>Keys never move</h3>
+        <p>Rows keep a fixed height and keys keep their order. A key only ever grows
+        or shrinks where it already is — it never slides out from under the finger
+        already on its way to it.</p>
+      </div>
+      <div class="card">
+        <h3>Nothing is corrected behind your back</h3>
+        <p>Steady offers completions on three large chips. It never silently rewrites
+        a word you typed, so what lands in the field is what you chose.</p>
+      </div>
+      <div class="card">
+        <h3>You set how strong it is</h3>
+        <p><strong>Off</strong> keeps every key the same size. <strong>Medium</strong>
+        grows likely letters gently. <strong>Aggressive</strong> uses the full size
+        range. Separate switches control whether impossible letters are removed or
+        just shrink, and whether likely letters grow at all.</p>
+      </div>
+      <div class="card">
+        <h3>Names and phrases</h3>
+        <p><strong>Names</strong> insert exactly as written, for the proper nouns
+        prediction will never guess. <strong>Phrases</strong> are sentences with
+        fill-in-the-blank slots that walk you through each blank with large chips.</p>
+      </div>
+    </div>
+  </div>
+</section>
 
-  <h2>Names and phrases</h2>
-  <ul>
-    <li><strong>Names</strong> — saved entries that insert exactly as written, for
-    proper nouns that prediction will never guess.</li>
-    <li><strong>Phrases</strong> — sentence templates with fill-in-the-blank slots.
-    A name slot draws from your Names list. Picking a phrase walks you through each
-    blank with large chips, then inserts the finished sentence.</li>
-  </ul>
-  <p>Both are edited in the Steady app and become available in the keyboard immediately.</p>
+<section class="band" id="privacy">
+  <div class="wrap split">
+    <div class="section-head" style="margin-bottom:0">
+      <p class="eyebrow" style="color:#8FE3C2">Privacy</p>
+      <h2>A keyboard that physically cannot send your typing anywhere.</h2>
+      <p>Most keyboards ask for “Allow Full Access”. That permission is what lets a
+      keyboard reach the network at all. Steady never asks for it.</p>
+    </div>
+    <div>
+      <ul class="ticks">
+        <li>No network code, no servers, no analytics, no crash reporters, no ads.</li>
+        <li>The dictionary is a static file inside the app. Every lookup is local.</li>
+        <li>Your names, phrases and settings stay in Steady’s own container on your device.</li>
+        <li>Nothing is collected, so there is nothing to leak, sell, or subpoena.</li>
+      </ul>
+      <p style="margin:24px 0 0"><a href="privacy.html">Read the full privacy policy</a></p>
+    </div>
+  </div>
+</section>
 
-  <h2>Getting help</h2>
-  <p>Please report bugs, request features, or ask questions by opening an issue on
-  GitHub: <a href="https://github.com/GabrielAboyDev/steady/issues">github.com/GabrielAboyDev/steady/issues</a>.</p>
-  <p>If you are testing Steady through TestFlight, you can also use the
-  <strong>Send Beta Feedback</strong> button in the TestFlight app, which attaches
-  a screenshot and your device details automatically.</p>
+<section id="beta">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Open beta</p>
+      <h2>It’s built. Now it needs real thumbs.</h2>
+      <p>Anyone can join — there is no waiting list and no invite code. The beta is
+      about finding where Steady fails on real devices, in real apps, for real hands.</p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <h3>What’s in this build</h3>
+        <p>The resizing keyboard, suggestion chips, the three strength profiles,
+        settings, a practice pad, names and phrases. All of it tested, all of it
+        on-device.</p>
+      </div>
+      <div class="card">
+        <h3>What to expect</h3>
+        <p>English only for now. Some apps hand keyboards an unusual text field, and
+        password fields deliberately fall back to a plain layout. If something feels
+        wrong, that is exactly what we want to hear about.</p>
+      </div>
+      <div class="card">
+        <h3>How to send feedback</h3>
+        <p>Use <strong>Send Beta Feedback</strong> in the TestFlight app — it attaches
+        a screenshot and your device details — or open an issue on
+        <a href="https://github.com/GabrielAboyDev/steady/issues">GitHub</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
 
-  <footer>
-    <a href="privacy.html">Privacy Policy</a> ·
-    <a href="https://github.com/GabrielAboyDev/steady">Source on GitHub</a>
-  </footer>
+<section class="alt">
+  <div class="wrap">
+    <div class="cta-block">
+      <h2>Join the open beta</h2>
+      <p>Install TestFlight, tap the link, and Steady appears alongside your other
+      keyboards. Three steps in Settings and you are typing on it.</p>
+      <a class="btn btn-primary" href="https://testflight.apple.com/join/VVBRJSdn">Get Steady on TestFlight</a>
+      <p style="margin:22px 0 0;font-size:15px">
+        New to this? <a href="support.html">Read the setup guide</a> — it takes about a minute.
+      </p>
+    </div>
+  </div>
+</section>
+
 </main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span class="brand">Steady</span>
+    <nav class="footer-links" aria-label="Footer">
+      <a href="support.html">Support</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="support.html#credits">Credits</a>
+      <a href="https://testflight.apple.com/join/VVBRJSdn">TestFlight</a>
+      <a href="https://github.com/GabrielAboyDev/steady">Source on GitHub</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="keyboard-demo.js" defer></script>
 </body>
 </html>
