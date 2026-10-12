@@ -62,6 +62,22 @@ cd PredictiveEngine && swift test
 To use the keyboard itself: run the app, then Settings › General › Keyboard › Keyboards ›
 Add New Keyboard › Steady. Hold the globe key in any app to switch to it.
 
+## Tests
+
+| Suite | Covers |
+|---|---|
+| `PredictiveEngineTests` | Completion ranking, next-letter weights, bigram prediction, the resize profiles, and bundled-lexicon loading. |
+| `SteadyUITests` | The keyboard's behaviour driven through the app's practice pad — resizing, chip insertion, quick-insert, and the phrase fill flow. Runs anywhere. |
+| `ExtensionInHostAppTest` | The keyboard running for real as a system keyboard in Safari. Needs a one-time simulator setup; skips itself with a pointer if that hasn't been done. |
+
+```sh
+scripts/enable-keyboard-in-simulator.sh    # enables Steady on the booted simulator
+```
+
+That script does what a user does in Settings — enables the keyboard — and also turns off
+the simulator's hardware keyboard and suppresses the system keyboard's one-time tutorial,
+neither of which can be scripted any other way.
+
 > The bundle identifier prefix (`com.gabrielaboy.steady`) and the app group are placeholders.
 > Point them at a domain you control before distributing.
 

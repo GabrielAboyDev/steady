@@ -43,6 +43,7 @@
 		1D0000000000000000000022 /* PhrasePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000015 /* PhrasePanel.swift */; };
 		1D0000000000000000000023 /* KeyboardSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000016 /* KeyboardSurface.swift */; };
 		1E0000000000000000000024 /* SteadyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B000000000000000000001A /* SteadyUITests.swift */; };
+		1E0000000000000000000025 /* ExtensionInHostAppTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B000000000000000000001B /* ExtensionInHostAppTest.swift */; };
 		1A0000000000000000000063 /* PredictiveEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 1A0000000000000000000061 /* PredictiveEngine */; };
 		1A0000000000000000000064 /* PredictiveEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 1A0000000000000000000062 /* PredictiveEngine */; };
 		1A0000000000000000000072 /* SteadyKeyboard.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000021 /* SteadyKeyboard.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -106,6 +107,7 @@
 		1B0000000000000000000018 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1B0000000000000000000019 /* SteadyKeyboard.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SteadyKeyboard.entitlements; sourceTree = "<group>"; };
 		1B000000000000000000001A /* SteadyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SteadyUITests.swift; sourceTree = "<group>"; };
+		1B000000000000000000001B /* ExtensionInHostAppTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionInHostAppTest.swift; sourceTree = "<group>"; };
 		1A0000000000000000000020 /* Steady.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Steady.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1A0000000000000000000021 /* SteadyKeyboard.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SteadyKeyboard.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		1A0000000000000000000022 /* SteadyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SteadyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -209,6 +211,7 @@
 			isa = PBXGroup;
 			children = (
 				1B000000000000000000001A /* SteadyUITests.swift */,
+				1B000000000000000000001B /* ExtensionInHostAppTest.swift */,
 			);
 			path = UITests;
 			sourceTree = "<group>";
@@ -400,6 +403,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1E0000000000000000000024 /* SteadyUITests.swift in Sources */,
+				1E0000000000000000000025 /* ExtensionInHostAppTest.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
