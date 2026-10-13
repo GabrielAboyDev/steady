@@ -3,32 +3,176 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Steady — a keyboard that reshapes itself as you type</title>
-<meta name="description" content="Steady is an iPhone and iPad keyboard for people who miss keys. After every letter it enlarges the letters that can still follow and removes the ones that can't. Now in open beta on TestFlight.">
+<title>Steady — an accessible iPhone keyboard that resizes its keys</title>
+<meta name="description" content="A free iPhone and iPad keyboard for people who miss keys — tremor, limited dexterity, one finger. After every letter, the keys that can still follow get bigger.">
 <link rel="canonical" href="https://steadykeyboard.com/">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
 <link rel="stylesheet" href="styles.css">
+<link rel="preload" href="fonts/atkinson-hyperlegible-700.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/atkinson-hyperlegible-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="icon" href="icon.png" type="image/png">
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="theme-color" content="#1C6E68">
+
 <meta property="og:type" content="website">
-<meta property="og:title" content="Steady — a keyboard that reshapes itself as you type">
-<meta property="og:description" content="An iPhone and iPad keyboard for people who miss keys. The letters that can come next get bigger. Now in open beta.">
+<meta property="og:site_name" content="Steady">
+<meta property="og:locale" content="en_GB">
+<meta property="og:title" content="Steady — an accessible iPhone keyboard that resizes its keys">
+<meta property="og:description" content="An iPhone and iPad keyboard for people who miss keys. The letters that can come next get bigger. Free, on-device, now in open beta.">
 <meta property="og:url" content="https://steadykeyboard.com/">
-<meta property="og:image" content="https://steadykeyboard.com/icon.png">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="https://steadykeyboard.com/social-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Three iPhones showing Steady typing in Messages, filling in a phrase, and inserting a saved name.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Steady — an accessible iPhone keyboard that resizes its keys">
+<meta name="twitter:description" content="An iPhone and iPad keyboard for people who miss keys. The letters that can come next get bigger. Free, on-device, now in open beta.">
+<meta name="twitter:image" content="https://steadykeyboard.com/social-card.png">
+<meta name="twitter:image:alt" content="Three iPhones showing Steady typing in Messages, filling in a phrase, and inserting a saved name.">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://steadykeyboard.com/#website",
+      "url": "https://steadykeyboard.com/",
+      "name": "Steady",
+      "description": "An accessible iPhone and iPad keyboard that enlarges the keys that can come next.",
+      "inLanguage": "en",
+      "publisher": { "@id": "https://steadykeyboard.com/#publisher" }
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://steadykeyboard.com/#publisher",
+      "name": "Steady",
+      "url": "https://steadykeyboard.com/",
+      "logo": "https://steadykeyboard.com/icon.png",
+      "sameAs": ["https://github.com/GabrielAboyDev/steady"]
+    },
+    {
+      "@type": "MobileApplication",
+      "@id": "https://steadykeyboard.com/#app",
+      "name": "Steady",
+      "alternateName": "Steady Keyboard",
+      "url": "https://steadykeyboard.com/",
+      "description": "Steady is an iPhone and iPad keyboard for people who miss keys. After every letter it enlarges the letters that can still follow and removes the ones that cannot, so tap targets widen as the word narrows. Everything runs on the device.",
+      "applicationCategory": "UtilitiesApplication",
+      "applicationSubCategory": "Keyboard",
+      "operatingSystem": "iOS 16.0 or later",
+      "installUrl": "https://testflight.apple.com/join/VVBRJSdn",
+      "softwareHelp": "https://steadykeyboard.com/support.html",
+      "privacyPolicy": "https://steadykeyboard.com/privacy.html",
+      "inLanguage": "en",
+      "isAccessibleForFree": true,
+      "accessibilityFeature": ["largeTouchTarget", "highContrastDisplay", "predictiveText"],
+      "accessibilityHazard": "none",
+      "accessibilityAPI": "ARIA",
+      "featureList": [
+        "Keys that can come next grow; keys that cannot shrink or leave the row",
+        "Three resize strengths: off, medium and aggressive",
+        "Three large word-completion chips, never a silent autocorrect",
+        "Saved names that insert exactly as written",
+        "Phrases with fill-in-the-blank slots",
+        "No network access and no \u201cAllow Full Access\u201d permission"
+      ],
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock",
+        "url": "https://testflight.apple.com/join/VVBRJSdn"
+      },
+      "publisher": { "@id": "https://steadykeyboard.com/#publisher" }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://steadykeyboard.com/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Who is Steady for?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Anyone who misses keys on a touchscreen. It is built around tremor, limited dexterity, and single-finger or switch typing \u2014 the situations a fixed grid of small keys fights hardest. Steady is a typing aid, not a medical device, and makes no clinical claims."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Steady work in every app?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Steady is a system keyboard, so it works anywhere you can type: Messages, Mail, Notes, Safari, WhatsApp. Password and other secure fields are the exception \u2014 there Steady deliberately falls back to a plain fixed layout, because reshaping the keys would reveal something about what you are typing."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Steady replace the built-in iPhone keyboard?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. It installs alongside it. Press and hold the globe key to switch between them, so the standard keyboard is always one press away."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which devices does Steady run on, and what does it cost?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "iPhone and iPad running iOS 16 or later. Steady is free \u2014 no account, no subscription, no ads \u2014 and the open beta is distributed through TestFlight, which anyone can join without an invite code."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Steady autocorrect what I type?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Steady offers completions on three large chips and inserts one only if you tap it. It never silently rewrites a word you have already typed, so what lands in the field is what you chose."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Steady collect any data?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Steady never asks for \u201cAllow Full Access\u201d, which is the permission a keyboard needs to reach the network at all. The dictionary is a static file inside the app and every lookup is local, so your typing cannot leave the device. There are no servers, analytics, crash reporters or ads."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What languages does Steady support?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "English only for now. The prediction engine reads a compiled dictionary file rather than anything language-specific, so further languages are a matter of building them, not rewriting the keyboard."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where do I get help?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The support page at https://steadykeyboard.com/support.html covers installing the beta, enabling the keyboard in Settings, the resize strengths, names and phrases, and what to do when something looks wrong."
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 
 <header class="topbar">
   <div class="wrap">
-    <a class="brand" href="index.html">
+    <a class="brand" href="/">
       <img src="icon.png" alt="" width="30" height="30">
       Steady
     </a>
     <nav class="navlinks" aria-label="Site">
       <a href="#demo">Try it</a>
       <a href="#how">How it works</a>
+      <a href="#faq">FAQ</a>
       <a href="#privacy">Privacy</a>
       <a href="support.html">Support</a>
     </nav>
@@ -169,6 +313,67 @@
   </div>
 </section>
 
+<section class="alt" id="faq">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Questions</p>
+      <h2>Common questions about Steady</h2>
+    </div>
+    <div class="cards two">
+      <div class="card">
+        <h3>Who is Steady for?</h3>
+        <p>Anyone who misses keys on a touchscreen. It is built around tremor, limited
+        dexterity, and single-finger or switch typing — the situations a fixed grid of
+        small keys fights hardest. Steady is a typing aid, not a medical device, and makes
+        no clinical claims.</p>
+      </div>
+      <div class="card">
+        <h3>Does Steady work in every app?</h3>
+        <p>Steady is a system keyboard, so it works anywhere you can type: Messages, Mail,
+        Notes, Safari, WhatsApp. Password and other secure fields are the exception —
+        there Steady deliberately falls back to a plain fixed layout, because reshaping the
+        keys would reveal something about what you are typing.</p>
+      </div>
+      <div class="card">
+        <h3>Does Steady replace the built-in iPhone keyboard?</h3>
+        <p>No. It installs alongside it. Press and hold the globe key to switch between
+        them, so the standard keyboard is always one press away.</p>
+      </div>
+      <div class="card">
+        <h3>Which devices does Steady run on, and what does it cost?</h3>
+        <p>iPhone and iPad running iOS 16 or later. Steady is free — no account, no
+        subscription, no ads — and the open beta is distributed through TestFlight,
+        which anyone can join without an invite code.</p>
+      </div>
+      <div class="card">
+        <h3>Does Steady autocorrect what I type?</h3>
+        <p>No. Steady offers completions on three large chips and inserts one only if you
+        tap it. It never silently rewrites a word you have already typed, so what lands in
+        the field is what you chose.</p>
+      </div>
+      <div class="card">
+        <h3>Does Steady collect any data?</h3>
+        <p>No. Steady never asks for “Allow Full Access”, which is the permission
+        a keyboard needs to reach the network at all. The dictionary is a static file inside
+        the app and every lookup is local, so your typing cannot leave the device. There are
+        no servers, analytics, crash reporters or ads.</p>
+      </div>
+      <div class="card">
+        <h3>What languages does Steady support?</h3>
+        <p>English only for now. The prediction engine reads a compiled dictionary file
+        rather than anything language-specific, so further languages are a matter of
+        building them, not rewriting the keyboard.</p>
+      </div>
+      <div class="card">
+        <h3>Where do I get help?</h3>
+        <p>The <a href="support.html">support page</a> covers installing the beta, enabling
+        the keyboard in Settings, the resize strengths, names and phrases, and what to do
+        when something looks wrong.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section id="beta">
   <div class="wrap">
     <div class="section-head">
@@ -221,6 +426,7 @@
     <span class="brand">Steady</span>
     <nav class="footer-links" aria-label="Footer">
       <a href="support.html">Support</a>
+      <a href="/#faq">FAQ</a>
       <a href="privacy.html">Privacy</a>
       <a href="support.html#credits">Credits</a>
       <a href="https://testflight.apple.com/join/VVBRJSdn">TestFlight</a>
