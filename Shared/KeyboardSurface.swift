@@ -149,14 +149,16 @@ struct KeyboardSurface: View {
                     .frame(height: 34)
                     .background(isSelected ? palette.accent : .clear)
                     .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-                    .shadow(color: isSelected ? Theme.brandDark.opacity(0.28) : .clear,
-                            radius: 1, y: 1)
+                    .shadow(
+                        color: isSelected ? Theme.brandDark.opacity(0.28) : .clear,
+                        radius: 1, y: 1)
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("panel-\(item.rawValue)")
                 .accessibilityLabel(item.title)
                 .accessibilityHint(
-                    isSelected && onCollapse != nil ? "Tap again to hide the keyboard" : "")
+                    isSelected && onCollapse != nil ? "Tap again to hide the keyboard" : ""
+                )
                 .accessibilityAddTraits(isSelected ? [.isSelected] : [])
             }
         }

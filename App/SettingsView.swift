@@ -71,9 +71,11 @@ struct SettingsView: View {
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.textSecondary)
 
-                    Text("The keyboard offers up to \(PredictionController.suggestionLimit) words; three show at once.")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Theme.textMuted)
+                    Text(
+                        "The keyboard offers up to \(PredictionController.suggestionLimit) words; three show at once."
+                    )
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.textMuted)
                 }
                 // Nothing in here applies with the chips switched off.
                 .disabled(!store.settings.showSuggestionChips)
@@ -91,9 +93,11 @@ struct SettingsView: View {
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.textSecondary)
 
-                    Text("Names and Phrases always stay light, so saved entries read the same way every time.")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Theme.textMuted)
+                    Text(
+                        "Names and Phrases always stay light, so saved entries read the same way every time."
+                    )
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.textMuted)
                 }
 
                 Section("Sharing") {

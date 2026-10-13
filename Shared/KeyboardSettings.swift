@@ -114,17 +114,23 @@ struct KeyboardSettings: Codable, Equatable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let fallback = KeyboardSettings()
-        resizeStrength = try container.decodeIfPresent(
-            ResizeStrength.self, forKey: .resizeStrength) ?? fallback.resizeStrength
-        hideImpossibleKeys = try container.decodeIfPresent(
-            Bool.self, forKey: .hideImpossibleKeys) ?? fallback.hideImpossibleKeys
-        enlargeLikelyKeys = try container.decodeIfPresent(
-            Bool.self, forKey: .enlargeLikelyKeys) ?? fallback.enlargeLikelyKeys
-        showSuggestionChips = try container.decodeIfPresent(
-            Bool.self, forKey: .showSuggestionChips) ?? fallback.showSuggestionChips
-        suggestionBrowsing = try container.decodeIfPresent(
-            SuggestionBrowsing.self, forKey: .suggestionBrowsing) ?? fallback.suggestionBrowsing
-        keyboardAppearance = try container.decodeIfPresent(
-            KeyboardAppearance.self, forKey: .keyboardAppearance) ?? fallback.keyboardAppearance
+        resizeStrength =
+            try container.decodeIfPresent(
+                ResizeStrength.self, forKey: .resizeStrength) ?? fallback.resizeStrength
+        hideImpossibleKeys =
+            try container.decodeIfPresent(
+                Bool.self, forKey: .hideImpossibleKeys) ?? fallback.hideImpossibleKeys
+        enlargeLikelyKeys =
+            try container.decodeIfPresent(
+                Bool.self, forKey: .enlargeLikelyKeys) ?? fallback.enlargeLikelyKeys
+        showSuggestionChips =
+            try container.decodeIfPresent(
+                Bool.self, forKey: .showSuggestionChips) ?? fallback.showSuggestionChips
+        suggestionBrowsing =
+            try container.decodeIfPresent(
+                SuggestionBrowsing.self, forKey: .suggestionBrowsing) ?? fallback.suggestionBrowsing
+        keyboardAppearance =
+            try container.decodeIfPresent(
+                KeyboardAppearance.self, forKey: .keyboardAppearance) ?? fallback.keyboardAppearance
     }
 }

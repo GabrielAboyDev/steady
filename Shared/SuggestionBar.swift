@@ -79,8 +79,10 @@ struct SuggestionBar: View {
     private var pagedRow: some View {
         HStack(spacing: 0) {
             if pageCount > 1 {
-                arrow("chevron.left", label: "Previous suggestions",
-                      identifier: "suggestions-previous", enabled: page > 0) {
+                arrow(
+                    "chevron.left", label: "Previous suggestions",
+                    identifier: "suggestions-previous", enabled: page > 0
+                ) {
                     page -= 1
                 }
                 rule
@@ -95,8 +97,10 @@ struct SuggestionBar: View {
 
             if pageCount > 1 {
                 rule
-                arrow("chevron.right", label: "More suggestions",
-                      identifier: "suggestions-next", enabled: page < pageCount - 1) {
+                arrow(
+                    "chevron.right", label: "More suggestions",
+                    identifier: "suggestions-next", enabled: page < pageCount - 1
+                ) {
                     page += 1
                 }
             }

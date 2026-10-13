@@ -74,19 +74,22 @@ final class PredictionController: ObservableObject {
         if prefix.isEmpty {
             suggestionsAreNextWord = true
             let previous = PredictionController.lastCompletedWord(in: context)
-            let nextWords = previous.isEmpty
+            let nextWords =
+                previous.isEmpty
                 ? []
                 : engine.predictNextWord(after: previous, limit: PredictionController.suggestionLimit)
             if nextWords.isEmpty {
                 suggestions = engine.completions(
-                    forPrefix: "", limit: PredictionController.suggestionLimit).map(\.word)
+                    forPrefix: "", limit: PredictionController.suggestionLimit
+                ).map(\.word)
             } else {
                 suggestions = nextWords.map(\.word)
             }
         } else {
             suggestionsAreNextWord = false
             suggestions = engine.completions(
-                forPrefix: prefix, limit: PredictionController.suggestionLimit).map(\.word)
+                forPrefix: prefix, limit: PredictionController.suggestionLimit
+            ).map(\.word)
         }
     }
 
