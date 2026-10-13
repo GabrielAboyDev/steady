@@ -49,15 +49,15 @@ struct DynamicKeyboardView: View {
     }
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             ForEach(Array(rows.enumerated()), id: \.offset) { index, rowKeys in
                 keyRow(rowKeys, isIndented: plane == .letters && index == 1)
             }
             bottomRow
         }
         .padding(.horizontal, 5)
-        .padding(.top, 6)
-        .padding(.bottom, 10)
+        .padding(.top, 4)
+        .padding(.bottom, 6)
         .background(palette.tray)
     }
 

@@ -282,6 +282,27 @@ struct KeyboardPalette {
 
 extension KeyboardPalette {
 
+    /// The same palette with no tray of its own, for sitting directly on the
+    /// pane iOS draws behind every keyboard. Everything else — key faces,
+    /// labels, the toolbar's track — is unchanged, so the keys read exactly as
+    /// they do on the painted tray; only the slab under them is the system's.
+    var onSystemBackdrop: KeyboardPalette {
+        KeyboardPalette(
+            tray: .clear,
+            keyFace: keyFace,
+            keyUtility: keyUtility,
+            keyLabel: keyLabel,
+            keyLabelMuted: keyLabelMuted,
+            toolbarBar: toolbarBar,
+            segmentTrack: segmentTrack,
+            segmentLabel: segmentLabel,
+            accent: accent,
+            accentStroke: accentStroke,
+            draftBar: draftBar,
+            isDark: isDark
+        )
+    }
+
     /// Light keeps the established tints on `KeyTier`; dark needs its own ramp
     /// because those run from #C9E7E3 down to white, which all read as "bright"
     /// on a near-black tray and so lose the ordering entirely.

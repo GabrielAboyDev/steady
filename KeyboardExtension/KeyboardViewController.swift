@@ -17,9 +17,10 @@ final class KeyboardViewController: UIInputViewController {
     ///
     /// It is also the exact sum of what the surface lays out, because the panel
     /// toolbar now sits at the bottom and anything short clips *that* rather
-    /// than a few points of key tray: keys 282 + suggestions 62 + toolbar 50 =
-    /// 394, plus 4 of slack. (At 390 the stack was already 4pt over.)
-    private let surfaceHeight: CGFloat = 398
+    /// than a few points of key tray: keys 270 + suggestions 47 + toolbar 42 =
+    /// 359, plus 4 of slack. (Before the paddings were trimmed this was 398,
+    /// and at 390 the stack was already 4pt over.)
+    private let surfaceHeight: CGFloat = 363
 
     private var hostingController: UIHostingController<KeyboardSurface>?
 
@@ -60,7 +61,8 @@ final class KeyboardViewController: UIInputViewController {
             sink: sink,
             showsNextKeyboardKey: needsInputModeSwitchKey,
             onNextKeyboard: { [weak self] in self?.advanceToNextInputMode() },
-            onCollapse: { [weak self] in self?.dismissKeyboard() }
+            onCollapse: { [weak self] in self?.dismissKeyboard() },
+            sitsOnSystemBackdrop: true
         )
 
         let host = UIHostingController(rootView: surface)

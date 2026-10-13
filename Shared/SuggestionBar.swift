@@ -28,8 +28,10 @@ struct SuggestionBar: View {
     /// Set by `KeyboardSurface` from the appearance setting; light by default.
     @Environment(\.keyboardPalette) private var palette
 
-    /// The tappable height of a word. Visually flat, physically full-size.
-    private let rowHeight: CGFloat = 52
+    /// The tappable height of a word. Visually flat, physically full-size:
+    /// exactly the 44pt minimum, trimmed from 52 to give the keyboard back
+    /// some height.
+    private let rowHeight: CGFloat = 44
     private let perPage = 3
     /// Wide enough for most words at 17pt, and the cell scales text down from
     /// there. Scrolling needs a real width — `maxWidth: .infinity` collapses
@@ -54,7 +56,9 @@ struct SuggestionBar: View {
             }
         }
         .padding(.horizontal, 4)
-        .padding(.vertical, 5)
+        // No top padding: iOS already leaves a strip of its own pane above
+        // the keyboard, so any inset here just stacked on top of that.
+        .padding(.bottom, 3)
         .background(palette.tray)
         .onChange(of: suggestions) { _ in page = 0 }
     }

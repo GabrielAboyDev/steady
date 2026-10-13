@@ -1,10 +1,13 @@
 import SwiftUI
 
 /// Which panel the toolbar is showing.
+///
+/// Declared in the order the toolbar shows them, which `allCases` follows:
+/// Phrases and Names first, the keyboard at the right end.
 enum KeyboardPanel: String, CaseIterable, Identifiable {
-    case keyboard
-    case names
     case phrases
+    case names
+    case keyboard
 
     var id: String { rawValue }
 
@@ -47,6 +50,15 @@ struct KeyboardSurface: View {
     /// is nil — in the practice pad — the toolbar drops the affordance rather
     /// than offering a tap that would do nothing.
     var onCollapse: (() -> Void)?
+    /// True in the extension, where iOS draws its own rounded pane behind the
+    /// keyboard and starts this view a little below the pane's top edge. The
+    /// practice pad has no such pane and paints its own tray.
+    var sitsOnSystemBackdrop: Bool = false
+
+    /// Measured against the system backdrop on iOS 26: its corner fits a
+    /// ~29pt circle and this view starts ~19pt below its top, so ~10pt is the
+    /// concentric radius; a touch more reads as rounded rather than chamfered.
+    static let topCornerRadius: CGFloat = 12
 
     @State private var panel: KeyboardPanel = .keyboard
     @State private var phraseSession: PhraseFillSession?
@@ -59,7 +71,15 @@ struct KeyboardSurface: View {
     @Environment(\.colorScheme) private var hostColorScheme
 
     private var palette: KeyboardPalette {
-        store.settings.keyboardAppearance.palette(for: hostColorScheme)
+        let base = store.settings.keyboardAppearance.palette(for: hostColorScheme)
+        // On the system pane the keyboard fills it instead of painting a slab
+        // of its own on top: the pane becomes the tray, and the strip of it
+        // above the suggestions is then simply more tray rather than something
+        // showing from behind. That only works while the pane's tone agrees
+        // with the keys — it follows the host app, so a keyboard forced to
+        // the opposite appearance keeps its own tray.
+        let paneMatches = base.isDark == (hostColorScheme == .dark)
+        return sitsOnSystemBackdrop && paneMatches ? base.onSystemBackdrop : base
     }
 
     var body: some View {
@@ -92,6 +112,14 @@ struct KeyboardSurface: View {
             toolbar
         }
         .background(surfaceBackground)
+        // iOS draws its own rounded, lighter backdrop behind every keyboard
+        // and places this view a short way below its top edge — outside the
+        // view, with no safe-area inset to read. Whenever the surface does
+        // paint a tray (the practice pad, the light panels, a forced
+        // appearance), square top corners sit inside that curve and the
+        // backdrop shows past them as a strip of a different shape; rounding
+        // them concentrically lets the surface nest in it instead.
+        .clipShape(TopRoundedRectangle(radius: Self.topCornerRadius))
         .environment(\.keyboardPalette, palette)
         // Drives the few things SwiftUI colours for itself (dividers, the odd
         // default-tinted control) inside the keys and chips.
@@ -162,7 +190,7 @@ struct KeyboardSurface: View {
             }
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .padding(.vertical, 4)
         // The toolbar is keyboard chrome, so it follows the appearance setting
         // even while a (always-light) panel is showing below it. It takes the
         // tray's own colour rather than `toolbarBar`: that token was chosen to
@@ -396,5 +424,31 @@ private struct LightPanel: ViewModifier {
         content
             .environment(\.keyboardPalette, .light)
             .environment(\.colorScheme, .light)
+    }
+}
+
+/// A rectangle rounded on its top two corners only.
+///
+/// `UnevenRoundedRectangle` is iOS 16.4, and the deployment target is 16.0,
+/// so the earlier releases get the same corners from UIKit's path.
+private struct TopRoundedRectangle: Shape {
+    let radius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        if #available(iOS 16.4, *) {
+            return UnevenRoundedRectangle(
+                topLeadingRadius: radius,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: 0,
+                topTrailingRadius: radius,
+                style: .continuous
+            ).path(in: rect)
+        }
+        return Path(
+            UIBezierPath(
+                roundedRect: rect,
+                byRoundingCorners: [.topLeft, .topRight],
+                cornerRadii: CGSize(width: radius, height: radius)
+            ).cgPath)
     }
 }
