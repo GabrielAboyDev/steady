@@ -56,8 +56,6 @@ struct KeyboardSurface: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            toolbar
-
             if freeTextSlot != nil {
                 freeTextDraftBar
                 keyboardStack
@@ -71,6 +69,11 @@ struct KeyboardSurface: View {
                     phrasesPanel
                 }
             }
+
+            // Last, so it sits where iOS puts the globe/mic row: against the
+            // bottom edge, under the thumbs, in the same place whichever panel
+            // is showing.
+            toolbar
         }
         .background(Theme.keyTray)
         .onAppear(perform: refresh)
@@ -81,6 +84,11 @@ struct KeyboardSurface: View {
     /// One inset track of equal thirds, which is the shape iOS already uses
     /// for switching mode. The capsules it replaced were unequal and left a
     /// gap on the right, so they read as filters rather than as a switch.
+    ///
+    /// It sits on the key tray rather than on a pale chrome bar, because at the
+    /// bottom of the surface it is directly under the keyboard's own bottom row
+    /// — sharing the tray colour keeps it part of the keyboard instead of
+    /// reading as a second, competing row of keys.
     ///
     /// Tapping the panel that is already showing collapses the keyboard, and
     /// the chevron on that segment is what says so — it keeps the affordance
@@ -131,7 +139,7 @@ struct KeyboardSurface: View {
         .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(Theme.surfaceBase)
+        .background(Theme.keyTray)
     }
 
     // MARK: Keyboard

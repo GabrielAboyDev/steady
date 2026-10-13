@@ -35,6 +35,9 @@ enum Theme {
 
     // Keyboard tray — iOS-native form per the PRD's design considerations.
     static let keyTray = Color(hex: 0xD1D4DB)
+    /// The hairline between prediction words — one step darker than the tray,
+    /// which is all a separator needs to be.
+    static let keyTrayRule = Color(hex: 0xB2B7C0)
     static let keyFace = Color.white
     static let keyUtility = Color(hex: 0xADB3BD)
 
