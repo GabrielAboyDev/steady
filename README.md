@@ -102,6 +102,15 @@ dictionary is compiled from. **Change the resize maths in `PredictiveEngine` and
 needs the same change**, or the site stops telling the truth about the app. Everything the
 site needs — typeface included — is served from `docs/`; it makes no third-party requests.
 
+For search engines the site carries `robots.txt`, `sitemap.xml`, a `404.html`, and
+JSON-LD in each page's head: a `MobileApplication` and an eight-question `FAQPage` on
+the landing page, `BreadcrumbList` plus a `HowTo` for the three enabling steps on
+support. **The FAQ answers are duplicated between the visible cards and the schema** —
+edit a question and edit both, or the markup stops matching the page. Three things to
+update when a page is added: the sitemap, the footer links, and the canonical URL in
+the new page's head. `docs/social-card.png` is the `og:image`: the listing banner at
+1200 × 630, copied in by the store-asset build rather than maintained by hand.
+
 ## Status
 
 **Open beta**, distributed through TestFlight with a public link. The prediction engine, the
