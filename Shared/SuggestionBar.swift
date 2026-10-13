@@ -3,11 +3,9 @@ import SwiftUI
 /// The word suggestions above the keys (US-004).
 ///
 /// Styled like the iOS prediction row: plain text on the tray, separated by
-/// hairlines, with no chip fills, rounded rectangles or shadows. What the row
-/// does *not* copy from iOS is its height — each word still owns a 52pt slice,
-/// comfortably past the 44pt minimum touch target, so the flat look costs the
-/// user nothing in aim. The press highlight is the only fill, and it only
-/// exists while a finger is down.
+/// hairlines, with no chip fills, rounded rectangles or shadows, and about
+/// the same height. The press highlight is the only fill, and it only exists
+/// while a finger is down.
 ///
 /// Three fit across a phone, but the engine offers more than three. The rest
 /// are reached either by swiping the row or by stepping it with arrows,
@@ -28,18 +26,22 @@ struct SuggestionBar: View {
     /// Set by `KeyboardSurface` from the appearance setting; light by default.
     @Environment(\.keyboardPalette) private var palette
 
-    /// The tappable height of a word. Visually flat, physically full-size:
-    /// exactly the 44pt minimum, trimmed from 52 to give the keyboard back
-    /// some height.
-    private let rowHeight: CGFloat = 44
+    /// The height of a word's slice, sized to the stock prediction row.
+    /// Measured on iOS 26 at 3x: the system's rules are 24pt tall and its
+    /// first key row starts 52pt below the top of the pane; this view starts
+    /// about 17pt below that edge, so 32pt here puts the panel toolbar where
+    /// the stock keys begin. Below the 44pt touch minimum on purpose — the
+    /// words are the full width of a third of the row, which is what makes
+    /// them hittable.
+    private let rowHeight: CGFloat = 32
     private let perPage = 3
     /// Wide enough for most words at 17pt, and the cell scales text down from
     /// there. Scrolling needs a real width — `maxWidth: .infinity` collapses
     /// inside a horizontal ScrollView.
     private let scrollCellWidth: CGFloat = 112
-    /// Shorter than the row, like the system's own: a full-bleed rule would
-    /// read as a table, an inset one reads as a separator.
-    private let ruleHeight: CGFloat = 30
+    /// The full row, so each rule runs from the top edge down to the panel
+    /// toolbar and the words sit in columns rather than floating in a band.
+    private var ruleHeight: CGFloat { rowHeight }
 
     var body: some View {
         Group {
@@ -56,9 +58,9 @@ struct SuggestionBar: View {
             }
         }
         .padding(.horizontal, 4)
-        // No top padding: iOS already leaves a strip of its own pane above
-        // the keyboard, so any inset here just stacked on top of that.
-        .padding(.bottom, 3)
+        // No vertical padding at all: iOS already leaves a strip of its own
+        // pane above the keyboard, so an inset above stacked on top of that,
+        // and the 44pt cells leave enough air around the words below.
         .background(palette.tray)
         .onChange(of: suggestions) { _ in page = 0 }
     }

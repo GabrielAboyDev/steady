@@ -93,10 +93,14 @@ final class StoreMessagesCaptureTests: XCTestCase {
     }
 
     private func openConversation() {
-        let cell = messages.cells.element(boundBy: 0)
-        XCTAssertTrue(cell.waitForExistence(timeout: 20), "no conversation in Messages")
-        cell.tap()
-        XCTAssertTrue(composeField.waitForExistence(timeout: 20), "no compose field")
+        // Messages restores whatever it was showing last, which after an
+        // earlier run is the thread itself rather than the list of them.
+        if !composeField.waitForExistence(timeout: 5) {
+            let cell = messages.cells.element(boundBy: 0)
+            XCTAssertTrue(cell.waitForExistence(timeout: 20), "no conversation in Messages")
+            cell.tap()
+            XCTAssertTrue(composeField.waitForExistence(timeout: 20), "no compose field")
+        }
         composeField.tap()
         settle(2.5)
     }

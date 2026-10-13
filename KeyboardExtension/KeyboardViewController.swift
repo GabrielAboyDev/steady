@@ -15,12 +15,11 @@ final class KeyboardViewController: UIInputViewController {
     /// Taller than the stock keyboard on purpose: the whole point is bigger,
     /// easier-to-hit targets.
     ///
-    /// It is also the exact sum of what the surface lays out, because the panel
-    /// toolbar now sits at the bottom and anything short clips *that* rather
-    /// than a few points of key tray: keys 270 + suggestions 47 + toolbar 42 =
-    /// 359, plus 4 of slack. (Before the paddings were trimmed this was 398,
-    /// and at 390 the stack was already 4pt over.)
-    private let surfaceHeight: CGFloat = 363
+    /// It is also the exact sum of what the surface lays out, because anything
+    /// short clips the bottom row of keys: suggestions 32 + toolbar 42 + keys
+    /// 270 = 344, plus 4 of slack. (Before the paddings were trimmed this was
+    /// 398, and at 390 the stack was already 4pt over.)
+    private let surfaceHeight: CGFloat = 348
 
     private var hostingController: UIHostingController<KeyboardSurface>?
 

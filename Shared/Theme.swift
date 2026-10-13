@@ -217,8 +217,9 @@ extension Color {
 ///
 /// Additive on purpose: the `Theme` tokens above are the light values and stay
 /// exactly as they were, so everything that doesn't go through a palette — the
-/// container app, the Names and Phrases panels — is unaffected. Only the keys,
-/// the suggestion row and the panel toolbar read these.
+/// container app, the Names and Phrases panels' tiles and text — is unaffected.
+/// Only the keys, the suggestion row, the panel toolbar and the panels' tray
+/// read these.
 struct KeyboardPalette {
 
     /// The slab behind the keys.

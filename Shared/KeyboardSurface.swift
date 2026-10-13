@@ -21,9 +21,13 @@ enum KeyboardPanel: String, CaseIterable, Identifiable {
 
     /// SF Symbols rather than emoji: they take the segment's tint, so the
     /// selected one reads white on brand instead of staying full-colour.
+    ///
+    /// The keyboard's symbol is the system's hide-keyboard glyph: tapping the
+    /// segment that is already selected collapses the keyboard, and that is
+    /// the icon iOS uses to say so.
     var symbol: String {
         switch self {
-        case .keyboard: return "keyboard"
+        case .keyboard: return "keyboard.chevron.compact.down"
         case .names: return "person"
         case .phrases: return "text.bubble"
         }
@@ -46,9 +50,9 @@ struct KeyboardSurface: View {
     /// Show the globe key (only the real extension needs one).
     var showsNextKeyboardKey: Bool = false
     var onNextKeyboard: () -> Void = {}
-    /// Hide the keyboard entirely. Only the extension can do this, so when it
-    /// is nil — in the practice pad — the toolbar drops the affordance rather
-    /// than offering a tap that would do nothing.
+    /// Hide the keyboard entirely, by tapping the panel segment that is
+    /// already selected. Only the extension can do this, so when it is nil —
+    /// in the practice pad — that tap does nothing and says nothing.
     var onCollapse: (() -> Void)?
     /// True in the extension, where iOS draws its own rounded pane behind the
     /// keyboard and starts this view a little below the pane's top edge. The
@@ -71,21 +75,50 @@ struct KeyboardSurface: View {
     @Environment(\.colorScheme) private var hostColorScheme
 
     private var palette: KeyboardPalette {
-        let base = store.settings.keyboardAppearance.palette(for: hostColorScheme)
-        // On the system pane the keyboard fills it instead of painting a slab
-        // of its own on top: the pane becomes the tray, and the strip of it
-        // above the suggestions is then simply more tray rather than something
-        // showing from behind. That only works while the pane's tone agrees
-        // with the keys — it follows the host app, so a keyboard forced to
-        // the opposite appearance keeps its own tray.
+        seated(store.settings.keyboardAppearance.palette(for: hostColorScheme))
+    }
+
+    /// What the Names and Phrases panels draw with. They are always light (see
+    /// `LightPanel`), so they sit on the pane exactly when the host is light.
+    private var panelPalette: KeyboardPalette {
+        seated(.light)
+    }
+
+    /// `base` with its tray cleared whenever the system pane can be the tray.
+    ///
+    /// On the pane the surface fills it instead of painting a slab of its own
+    /// on top: the pane becomes the tray, and the strip of it above the
+    /// suggestions or the panel is then simply more tray rather than something
+    /// showing from behind. That only works while the pane's tone agrees with
+    /// what sits on it — the pane follows the host app, so a keyboard forced
+    /// to the opposite appearance, or a light panel in a dark host, keeps its
+    /// own tray.
+    private func seated(_ base: KeyboardPalette) -> KeyboardPalette {
         let paneMatches = base.isDark == (hostColorScheme == .dark)
         return sitsOnSystemBackdrop && paneMatches ? base.onSystemBackdrop : base
     }
 
     var body: some View {
         VStack(spacing: 0) {
+            // The top row is the suggestions — or, while a phrase blank is
+            // being typed, the draft of it. It shows whichever panel is open,
+            // so the toolbar under it stays put when the panel changes.
             if freeTextSlot != nil {
                 freeTextDraftBar
+            } else if store.settings.showSuggestionChips {
+                SuggestionBar(
+                    suggestions: controller.suggestions,
+                    areNextWord: controller.suggestionsAreNextWord,
+                    browsing: store.settings.suggestionBrowsing,
+                    onPick: pickSuggestion
+                )
+            }
+
+            // Phrases / Names / Keyboard sit directly under the suggestions,
+            // above whichever of the three is open.
+            toolbar
+
+            if freeTextSlot != nil {
                 keyboardStack
             } else {
                 switch panel {
@@ -93,30 +126,25 @@ struct KeyboardSurface: View {
                     keyboardStack
                 case .names:
                     QuickInsertPanel(categories: store.categories, onInsert: insertQuickEntry)
-                        .modifier(LightPanel())
+                        .modifier(LightPanel(palette: panelPalette))
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 case .phrases:
                     phrasesPanel
-                        .modifier(LightPanel())
+                        .modifier(LightPanel(palette: panelPalette))
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 }
             }
             // The panels claim the full height whatever they hold. With
             // nothing saved, "No names yet" is a few lines tall, and without
-            // this the surface shrank around it and the toolbar floated up —
-            // the one state every new install starts in.
-
-            // Last, so it sits where iOS puts the globe/mic row: against the
-            // bottom edge, under the thumbs, in the same place whichever panel
-            // is showing.
-            toolbar
+            // this the surface shrank around it — the one state every new
+            // install starts in.
         }
         .background(surfaceBackground)
         // iOS draws its own rounded, lighter backdrop behind every keyboard
         // and places this view a short way below its top edge — outside the
         // view, with no safe-area inset to read. Whenever the surface does
-        // paint a tray (the practice pad, the light panels, a forced
-        // appearance), square top corners sit inside that curve and the
+        // paint a tray (the practice pad, a light panel in a dark host, a
+        // forced appearance), square top corners sit inside that curve and the
         // backdrop shows past them as a strip of a different shape; rounding
         // them concentrically lets the surface nest in it instead.
         .clipShape(TopRoundedRectangle(radius: Self.topCornerRadius))
@@ -134,9 +162,9 @@ struct KeyboardSurface: View {
 
     /// Whatever the panels don't paint themselves. It follows the light panels
     /// rather than the keyboard, so a short Names list doesn't leave a dark
-    /// strip under itself.
+    /// strip under itself — and clears with them, so the pane shows through.
     private var surfaceBackground: Color {
-        isShowingLightPanel ? KeyboardPalette.light.tray : palette.tray
+        isShowingLightPanel ? panelPalette.tray : palette.tray
     }
 
     // MARK: Toolbar
@@ -145,21 +173,21 @@ struct KeyboardSurface: View {
     /// for switching mode. The capsules it replaced were unequal and left a
     /// gap on the right, so they read as filters rather than as a switch.
     ///
-    /// It sits on the key tray rather than on a pale chrome bar, because at the
-    /// bottom of the surface it is directly under the keyboard's own bottom row
-    /// — sharing the tray colour keeps it part of the keyboard instead of
-    /// reading as a second, competing row of keys.
+    /// It sits on the key tray rather than on a pale chrome bar: between the
+    /// suggestions and the keys, sharing the tray colour keeps it part of the
+    /// keyboard instead of reading as a second, competing row of keys.
     ///
-    /// Tapping the panel that is already showing collapses the keyboard, and
-    /// the chevron on that segment is what says so — it keeps the affordance
-    /// where the tap already is instead of spending width on a fourth button.
+    /// Tapping the panel that is already showing collapses the keyboard — it
+    /// keeps the affordance where the tap already is instead of spending
+    /// width on a fourth button, and the keyboard segment carries the
+    /// system's hide-keyboard glyph to say so.
     private var toolbar: some View {
         HStack(spacing: 10) {
             if showsNextKeyboardKey {
-                // The globe sits where iOS puts it, at the left end of the
-                // bottom row, with the panel switch beside it. It used to be a
-                // key inside the letter rows' bottom line, which is not where a
-                // thumb that has learned the stock keyboard goes looking.
+                // The globe at the left end of the row, with the panel switch
+                // beside it. It used to be a key inside the letter rows'
+                // bottom line, which is not where a thumb that has learned
+                // the stock keyboard goes looking.
                 Button(action: onNextKeyboard) {
                     Image(systemName: "globe")
                         .font(.system(size: 20, weight: .regular))
@@ -172,30 +200,13 @@ struct KeyboardSurface: View {
                 .accessibilityLabel("Next keyboard")
             }
             panelTrack
-            if let onCollapse {
-                // The right end, where iOS puts the mic. A custom keyboard
-                // cannot reach the microphone at all, so dictation is not ours
-                // to offer; hiding the keyboard is, and it brackets the row the
-                // way the stock keyboard's is bracketed.
-                Button(action: onCollapse) {
-                    Image(systemName: "keyboard.chevron.compact.down")
-                        .font(.system(size: 20, weight: .regular))
-                        .foregroundStyle(palette.keyLabel)
-                        .frame(width: 44, height: 38)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("hide-keyboard")
-                .accessibilityLabel("Hide keyboard")
-            }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
         // The toolbar is keyboard chrome, so it follows the appearance setting
         // even while a (always-light) panel is showing below it. It takes the
-        // tray's own colour rather than `toolbarBar`: that token was chosen to
-        // sit a step above the keys when the toolbar was *above* them, and down
-        // here among the keys the lighter bar reads as a second, competing row.
+        // tray's own colour rather than `toolbarBar`: a lighter bar between
+        // the suggestions and the keys reads as a second, competing row.
         .background(palette.tray)
     }
 
@@ -246,26 +257,15 @@ struct KeyboardSurface: View {
     // MARK: Keyboard
 
     private var keyboardStack: some View {
-        VStack(spacing: 0) {
-            if store.settings.showSuggestionChips && freeTextSlot == nil {
-                SuggestionBar(
-                    suggestions: controller.suggestions,
-                    areNextWord: controller.suggestionsAreNextWord,
-                    browsing: store.settings.suggestionBrowsing,
-                    onPick: pickSuggestion
-                )
-            }
-
-            DynamicKeyboardView(
-                keyScales: controller.keyScales,
-                topScale: controller.topScale,
-                isStaticFallback: controller.isStaticFallback,
-                colorVision: store.settings.colorVision,
-                onInsert: insert,
-                onDelete: deleteBackward,
-                onReturn: { insert("\n") }
-            )
-        }
+        DynamicKeyboardView(
+            keyScales: controller.keyScales,
+            topScale: controller.topScale,
+            isStaticFallback: controller.isStaticFallback,
+            colorVision: store.settings.colorVision,
+            onInsert: insert,
+            onDelete: deleteBackward,
+            onReturn: { insert("\n") }
+        )
     }
 
     // MARK: Phrases
@@ -419,10 +419,15 @@ struct KeyboardSurface: View {
 /// Pinning the two panel subtrees is also what makes a dark keyboard possible
 /// at all: the alternative, pinning the whole input view with
 /// `overrideUserInterfaceStyle = .light`, would force the keys light too.
+///
+/// `palette` is the light palette, with or without its tray: the panels read
+/// their slab from it, so they can sit on the system pane the way the keys do.
 private struct LightPanel: ViewModifier {
+    let palette: KeyboardPalette
+
     func body(content: Content) -> some View {
         content
-            .environment(\.keyboardPalette, .light)
+            .environment(\.keyboardPalette, palette)
             .environment(\.colorScheme, .light)
     }
 }

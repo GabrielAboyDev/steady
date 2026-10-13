@@ -8,6 +8,10 @@ struct QuickInsertPanel: View {
     let onInsert: (QuickInsertEntry) -> Void
 
     @State private var selectedCategoryID: UUID?
+    /// Only the tray is read from here: the panel is always light, and the
+    /// surface hands it the light palette with the tray cleared when the
+    /// system pane behind the keyboard can be the tray instead.
+    @Environment(\.keyboardPalette) private var palette
 
     private var selectedCategory: QuickInsertCategory? {
         categories.first { $0.id == selectedCategoryID } ?? categories.first
@@ -22,7 +26,7 @@ struct QuickInsertPanel: View {
                 entryGrid
             }
         }
-        .background(Theme.keyTray)
+        .background(palette.tray)
     }
 
     private var categoryStrip: some View {

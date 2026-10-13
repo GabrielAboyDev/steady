@@ -6,6 +6,9 @@ struct PhrasePicker: View {
     let phrases: [PhraseTemplate]
     let onSelect: (PhraseTemplate) -> Void
 
+    /// Only the tray is read from here; see `QuickInsertPanel`.
+    @Environment(\.keyboardPalette) private var palette
+
     var body: some View {
         Group {
             if phrases.isEmpty {
@@ -51,7 +54,7 @@ struct PhrasePicker: View {
                 }
             }
         }
-        .background(Theme.keyTray)
+        .background(palette.tray)
     }
 }
 
@@ -67,6 +70,9 @@ struct PhraseFillView: View {
     let onRequestFreeText: (PhraseSlot) -> Void
     let onCancel: () -> Void
 
+    /// Only the tray is read from here; see `QuickInsertPanel`.
+    @Environment(\.keyboardPalette) private var palette
+
     var body: some View {
         VStack(spacing: 0) {
             preview
@@ -76,7 +82,7 @@ struct PhraseFillView: View {
             }
             controls
         }
-        .background(Theme.keyTray)
+        .background(palette.tray)
     }
 
     private var preview: some View {
