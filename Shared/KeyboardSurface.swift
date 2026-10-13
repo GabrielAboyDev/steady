@@ -142,6 +142,7 @@ struct KeyboardSurface: View {
                 SuggestionBar(
                     suggestions: controller.suggestions,
                     areNextWord: controller.suggestionsAreNextWord,
+                    browsing: store.settings.suggestionBrowsing,
                     onPick: pickSuggestion
                 )
             }

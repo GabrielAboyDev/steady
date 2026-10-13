@@ -21,6 +21,10 @@ final class PredictionController: ObservableObject {
     /// most-likely key for emphasis.
     private(set) var topScale: Double = 1.0
 
+    /// How many words to ask the engine for: three pages of three. Past that
+    /// the ranking is weak enough that paging further is not worth the tap.
+    static let suggestionLimit = 9
+
     private let engine: PredictiveEngine?
     private var settings: KeyboardSettings
 
@@ -65,19 +69,24 @@ final class PredictionController: ObservableObject {
         keyScales = scales
         topScale = scales.values.filter(\.isPossible).map(\.scale).max() ?? 1.0
 
-        // Chips.
+        // Chips. More than fit on screen: the bar shows three at a time and
+        // the rest are a swipe or an arrow-tap away.
         if prefix.isEmpty {
             suggestionsAreNextWord = true
             let previous = PredictionController.lastCompletedWord(in: context)
-            let nextWords = previous.isEmpty ? [] : engine.predictNextWord(after: previous, limit: 3)
+            let nextWords = previous.isEmpty
+                ? []
+                : engine.predictNextWord(after: previous, limit: PredictionController.suggestionLimit)
             if nextWords.isEmpty {
-                suggestions = engine.completions(forPrefix: "", limit: 3).map(\.word)
+                suggestions = engine.completions(
+                    forPrefix: "", limit: PredictionController.suggestionLimit).map(\.word)
             } else {
                 suggestions = nextWords.map(\.word)
             }
         } else {
             suggestionsAreNextWord = false
-            suggestions = engine.completions(forPrefix: prefix, limit: 3).map(\.word)
+            suggestions = engine.completions(
+                forPrefix: prefix, limit: PredictionController.suggestionLimit).map(\.word)
         }
     }
 
