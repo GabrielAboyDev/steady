@@ -25,6 +25,9 @@ struct SuggestionBar: View {
     /// to do with this one.
     @State private var page = 0
 
+    /// Set by `KeyboardSurface` from the appearance setting; light by default.
+    @Environment(\.keyboardPalette) private var palette
+
     /// The tappable height of a word. Visually flat, physically full-size.
     private let rowHeight: CGFloat = 52
     private let perPage = 3
@@ -41,7 +44,7 @@ struct SuggestionBar: View {
             if suggestions.isEmpty {
                 Text(areNextWord ? "Keep typing" : "No suggestions")
                     .font(.system(size: 14))
-                    .foregroundStyle(Theme.textMuted)
+                    .foregroundStyle(palette.keyLabelMuted)
                     .frame(maxWidth: .infinity, minHeight: rowHeight)
             } else {
                 switch browsing {
@@ -52,7 +55,7 @@ struct SuggestionBar: View {
         }
         .padding(.horizontal, 4)
         .padding(.vertical, 5)
-        .background(Theme.keyTray)
+        .background(palette.tray)
         .onChange(of: suggestions) { _ in page = 0 }
     }
 
@@ -129,7 +132,7 @@ struct SuggestionBar: View {
                 .font(.system(size: 17, weight: rank == 0 ? .semibold : .regular))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-                .foregroundStyle(rank == 0 ? Theme.brandDark : Theme.textPrimary)
+                .foregroundStyle(rank == 0 ? emphasis : palette.keyLabel)
                 .frame(maxWidth: .infinity, minHeight: rowHeight)
         }
         .buttonStyle(FlatSuggestionStyle())
@@ -148,7 +151,7 @@ struct SuggestionBar: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(enabled ? Theme.textSecondary : Theme.textMuted.opacity(0.45))
+                .foregroundStyle(enabled ? palette.keyLabel : palette.keyLabelMuted.opacity(0.5))
                 // 44pt wide: the arrows are a touch target like any other key.
                 .frame(width: 44, height: rowHeight)
         }
@@ -160,8 +163,14 @@ struct SuggestionBar: View {
 
     private var rule: some View {
         Rectangle()
-            .fill(Theme.keyTrayRule)
+            .fill(palette.isDark ? Color.white.opacity(0.18) : Theme.keyTrayRule)
             .frame(width: 1, height: ruleHeight)
+    }
+
+    /// The top word's colour. `brandDark` disappears into a near-black tray,
+    /// so dark borrows the lighter accent the keys use for their ring.
+    private var emphasis: Color {
+        palette.isDark ? palette.accentStroke : Theme.brandDark
     }
 }
 
@@ -169,12 +178,14 @@ struct SuggestionBar: View {
 /// is what the system row does. Also restores the full-rectangle hit area that
 /// a transparent label would otherwise lose.
 private struct FlatSuggestionStyle: ButtonStyle {
+    @Environment(\.keyboardPalette) private var palette
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .contentShape(Rectangle())
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Theme.keyFace.opacity(configuration.isPressed ? 0.9 : 0))
+                    .fill(palette.keyFace.opacity(configuration.isPressed ? 0.9 : 0))
             )
     }
 }

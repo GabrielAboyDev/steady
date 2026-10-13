@@ -55,6 +55,36 @@ enum SuggestionBrowsing: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+/// What the keyboard looks like.
+///
+/// The keyboard was light-only, which makes it a bright slab in a dark host
+/// app. `system` follows whatever app the user is typing in; the other two pin
+/// it for people who find one of the two easier to read regardless.
+enum KeyboardAppearance: String, Codable, CaseIterable, Identifiable {
+    /// Follow the host app — the stock keyboard's behaviour, and the default.
+    case system
+    case light
+    case dark
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .system: return "Match system"
+        case .light: return "Light"
+        case .dark: return "Dark"
+        }
+    }
+
+    var explanation: String {
+        switch self {
+        case .system: return "The keyboard follows the app you're typing in."
+        case .light: return "Always the light keyboard, even in a dark app."
+        case .dark: return "Always the dark keyboard, even in a light app."
+        }
+    }
+}
+
 /// User-tunable keyboard behaviour, persisted to the app group.
 struct KeyboardSettings: Codable, Equatable {
 
@@ -67,6 +97,8 @@ struct KeyboardSettings: Codable, Equatable {
     var showSuggestionChips: Bool = true
     /// How to reach the suggestions past the first three.
     var suggestionBrowsing: SuggestionBrowsing = .paginate
+    /// Light, dark, or follow the app being typed into.
+    var keyboardAppearance: KeyboardAppearance = .system
 
     static let `default` = KeyboardSettings()
 
@@ -92,5 +124,7 @@ struct KeyboardSettings: Codable, Equatable {
             Bool.self, forKey: .showSuggestionChips) ?? fallback.showSuggestionChips
         suggestionBrowsing = try container.decodeIfPresent(
             SuggestionBrowsing.self, forKey: .suggestionBrowsing) ?? fallback.suggestionBrowsing
+        keyboardAppearance = try container.decodeIfPresent(
+            KeyboardAppearance.self, forKey: .keyboardAppearance) ?? fallback.keyboardAppearance
     }
 }
