@@ -21,6 +21,9 @@ struct SuggestionBar: View {
     /// to do with this one.
     @State private var page = 0
 
+    /// Set by `KeyboardSurface` from the appearance setting; light by default.
+    @Environment(\.keyboardPalette) private var palette
+
     private let chipHeight: CGFloat = 52
     private let perPage = 3
     /// Wide enough for most words at 17pt, and the chip scales text down from
@@ -33,7 +36,7 @@ struct SuggestionBar: View {
             if suggestions.isEmpty {
                 Text(areNextWord ? "Keep typing" : "No suggestions")
                     .font(.system(size: 14))
-                    .foregroundStyle(Theme.textMuted)
+                    .foregroundStyle(palette.keyLabelMuted)
                     .frame(maxWidth: .infinity, minHeight: chipHeight)
             } else {
                 switch browsing {
@@ -44,7 +47,7 @@ struct SuggestionBar: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 7)
-        .background(Theme.keyTray)
+        .background(palette.tray)
         .onChange(of: suggestions) { _ in page = 0 }
     }
 
@@ -113,11 +116,11 @@ struct SuggestionBar: View {
                 .font(.system(size: 17, weight: .semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-                .foregroundStyle(rank == 0 ? .white : Theme.textPrimary)
+                .foregroundStyle(rank == 0 ? .white : palette.keyLabel)
                 .frame(maxWidth: .infinity, minHeight: chipHeight)
-                .background(rank == 0 ? Theme.brand : Theme.keyFace)
+                .background(rank == 0 ? palette.accent : palette.keyFace)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                .shadow(color: .black.opacity(0.18), radius: 0, x: 0, y: 1)
+                .shadow(color: .black.opacity(palette.isDark ? 0.4 : 0.18), radius: 0, x: 0, y: 1)
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(identifier)
@@ -134,10 +137,10 @@ struct SuggestionBar: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(enabled ? Theme.textPrimary : Theme.textMuted.opacity(0.5))
+                .foregroundStyle(enabled ? palette.keyLabel : palette.keyLabelMuted.opacity(0.5))
                 // 44pt wide: the arrows are a touch target like any other key.
                 .frame(width: 44, height: chipHeight)
-                .background(Theme.keyFace.opacity(enabled ? 1 : 0.5))
+                .background(palette.keyFace.opacity(enabled ? 1 : 0.5))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .shadow(color: .black.opacity(enabled ? 0.18 : 0), radius: 0, x: 0, y: 1)
         }

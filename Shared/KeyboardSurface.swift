@@ -54,6 +54,14 @@ struct KeyboardSurface: View {
     @State private var freeTextSlot: PhraseSlot?
     @StateObject private var freeTextBuffer = BufferTextSink()
 
+    /// In the extension this is the host app's appearance, which is what the
+    /// `system` appearance setting follows.
+    @Environment(\.colorScheme) private var hostColorScheme
+
+    private var palette: KeyboardPalette {
+        store.settings.keyboardAppearance.palette(for: hostColorScheme)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             toolbar
@@ -67,13 +75,31 @@ struct KeyboardSurface: View {
                     keyboardStack
                 case .names:
                     QuickInsertPanel(categories: store.categories, onInsert: insertQuickEntry)
+                        .modifier(LightPanel())
                 case .phrases:
                     phrasesPanel
+                        .modifier(LightPanel())
                 }
             }
         }
-        .background(Theme.keyTray)
+        .background(surfaceBackground)
+        .environment(\.keyboardPalette, palette)
+        // Drives the few things SwiftUI colours for itself (dividers, the odd
+        // default-tinted control) inside the keys and chips.
+        .environment(\.colorScheme, palette.isDark ? .dark : .light)
         .onAppear(perform: refresh)
+    }
+
+    /// True while a panel that must stay light is on screen.
+    private var isShowingLightPanel: Bool {
+        freeTextSlot == nil && panel != .keyboard
+    }
+
+    /// Whatever the panels don't paint themselves. It follows the light panels
+    /// rather than the keyboard, so a short Names list doesn't leave a dark
+    /// strip under itself.
+    private var surfaceBackground: Color {
+        isShowingLightPanel ? KeyboardPalette.light.tray : palette.tray
     }
 
     // MARK: Toolbar
@@ -110,10 +136,10 @@ struct KeyboardSurface: View {
                     }
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
-                    .foregroundStyle(isSelected ? .white : Theme.textSecondary)
+                    .foregroundStyle(isSelected ? .white : palette.segmentLabel)
                     .frame(maxWidth: .infinity)
                     .frame(height: 34)
-                    .background(isSelected ? Theme.brand : .clear)
+                    .background(isSelected ? palette.accent : .clear)
                     .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
                     .shadow(color: isSelected ? Theme.brandDark.opacity(0.28) : .clear,
                             radius: 1, y: 1)
@@ -127,11 +153,13 @@ struct KeyboardSurface: View {
             }
         }
         .padding(2)
-        .background(Theme.segmentTrack)
+        .background(palette.segmentTrack)
         .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(Theme.surfaceBase)
+        // The toolbar is keyboard chrome, so it follows the appearance setting
+        // even while a (always-light) panel is showing below it.
+        .background(palette.toolbarBar)
     }
 
     // MARK: Keyboard
@@ -200,10 +228,10 @@ struct KeyboardSurface: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Typing \(freeTextSlot?.name ?? "")")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Theme.textMuted)
+                    .foregroundStyle(palette.keyLabelMuted)
                 Text(freeTextBuffer.text.isEmpty ? "…" : freeTextBuffer.text)
                     .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(Theme.textPrimary)
+                    .foregroundStyle(palette.keyLabel)
                     .lineLimit(1)
             }
             Spacer(minLength: 0)
@@ -215,9 +243,9 @@ struct KeyboardSurface: View {
             } label: {
                 Text("Cancel")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Theme.textSecondary)
+                    .foregroundStyle(palette.segmentLabel)
                     .frame(minWidth: 72, minHeight: 44)
-                    .background(Theme.keyFace)
+                    .background(palette.keyFace)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
             }
             .buttonStyle(.plain)
@@ -233,14 +261,14 @@ struct KeyboardSurface: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(minWidth: 72, minHeight: 44)
-                    .background(Theme.brand)
+                    .background(palette.accent)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
             }
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(Theme.surfaceRaised)
+        .background(palette.draftBar)
     }
 
     // MARK: Text routing
@@ -283,5 +311,19 @@ struct KeyboardSurface: View {
             context: activeSink.contextBeforeInput,
             isSecure: activeSink.isSecureEntry
         )
+    }
+}
+
+/// Names and Phrases stay light whatever the keyboard appearance is — that is
+/// a stated requirement, not an oversight.
+///
+/// Pinning the two panel subtrees is also what makes a dark keyboard possible
+/// at all: the alternative, pinning the whole input view with
+/// `overrideUserInterfaceStyle = .light`, would force the keys light too.
+private struct LightPanel: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .environment(\.keyboardPalette, .light)
+            .environment(\.colorScheme, .light)
     }
 }

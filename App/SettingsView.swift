@@ -78,6 +78,24 @@ struct SettingsView: View {
                 // Nothing in here applies with the chips switched off.
                 .disabled(!store.settings.showSuggestionChips)
 
+                Section("Keyboard appearance") {
+                    Picker("Keyboard appearance", selection: $store.settings.keyboardAppearance) {
+                        ForEach(KeyboardAppearance.allCases) { option in
+                            Text(option.title).tag(option)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("keyboard-appearance")
+
+                    Text(store.settings.keyboardAppearance.explanation)
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.textSecondary)
+
+                    Text("Names and Phrases always stay light, so saved entries read the same way every time.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.textMuted)
+                }
+
                 Section("Sharing") {
                     HStack {
                         Text(store.isSharingThroughAppGroup ? "Shared with the keyboard" : "Not shared yet")

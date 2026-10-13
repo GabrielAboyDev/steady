@@ -31,6 +31,9 @@ struct DynamicKeyboardView: View {
     @State private var plane: KeyPlane = .letters
     @State private var isShifted = false
 
+    /// Set by `KeyboardSurface` from the appearance setting; light by default.
+    @Environment(\.keyboardPalette) private var palette
+
     private let baseKeyHeight: CGFloat = 44
     private let maxHeightFactor: CGFloat = 1.5
     private let keySpacing: CGFloat = 6
@@ -55,7 +58,7 @@ struct DynamicKeyboardView: View {
         .padding(.horizontal, 5)
         .padding(.top, 6)
         .padding(.bottom, 10)
-        .background(Theme.keyTray)
+        .background(palette.tray)
     }
 
     // MARK: Letter rows
@@ -147,12 +150,13 @@ struct DynamicKeyboardView: View {
         } label: {
             ZStack {
                 RoundedRectangle(cornerRadius: 6)
-                    .fill(metrics.tier.face)
+                    .fill(palette.face(for: metrics.tier))
                     .overlay(
                         RoundedRectangle(cornerRadius: 6)
-                            .strokeBorder(Theme.brand, lineWidth: metrics.tier.isEmphasized ? 2 : 0)
+                            .strokeBorder(
+                                palette.accentStroke, lineWidth: metrics.tier.isEmphasized ? 2 : 0)
                     )
-                    .shadow(color: .black.opacity(0.22), radius: 0, x: 0, y: 1)
+                    .shadow(color: .black.opacity(palette.isDark ? 0.45 : 0.22), radius: 0, x: 0, y: 1)
                     .padding(.horizontal, keySpacing / 2)
 
                 Text(label)
@@ -160,7 +164,7 @@ struct DynamicKeyboardView: View {
                         .system(
                             size: fontSize(for: metrics), weight: metrics.tier.isEmphasized ? .bold : .medium)
                     )
-                    .foregroundStyle(metrics.tier.label)
+                    .foregroundStyle(palette.label(for: metrics.tier))
                     .minimumScaleFactor(0.6)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -202,9 +206,9 @@ struct DynamicKeyboardView: View {
             } label: {
                 Text("space")
                     .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(Theme.textPrimary)
+                    .foregroundStyle(palette.keyLabel)
                     .frame(maxWidth: .infinity, minHeight: baseKeyHeight)
-                    .background(Theme.keyFace)
+                    .background(palette.keyFace)
                     .clipShape(RoundedRectangle(cornerRadius: 6))
             }
             .buttonStyle(.plain)
@@ -231,9 +235,9 @@ struct DynamicKeyboardView: View {
         Button(action: action) {
             Text(label)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(isActive ? .white : Theme.textPrimary)
+                .foregroundStyle(isActive ? .white : palette.keyLabel)
                 .frame(width: width, height: baseKeyHeight)
-                .background(isActive ? Theme.brand : Theme.keyUtility)
+                .background(isActive ? palette.accent : palette.keyUtility)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
         }
         .buttonStyle(.plain)
