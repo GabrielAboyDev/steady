@@ -8,10 +8,12 @@ struct SteadyApp: App {
 
     init() {
         #if DEBUG
-            // UI tests launch with this flag so each test starts from the seeds
-            // rather than whatever the previous test left in the app group.
+            // UI tests and the store captures launch with this flag, so each
+            // run starts from the same demo content rather than whatever the
+            // previous one left in the app group. A shipping install never
+            // takes this path and starts with nothing.
             if ProcessInfo.processInfo.arguments.contains("-UITestResetState") {
-                SharedStore.shared.resetToSeeds()
+                SharedStore.shared.resetToDemoContent()
             }
         #endif
     }

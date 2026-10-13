@@ -21,9 +21,12 @@ struct QuickInsertCategory: Codable, Equatable, Identifiable {
 
 extension QuickInsertCategory {
 
-    /// Seed content matching the Names mock, so the panel is useful before the
-    /// user has added anything.
-    static let seeded: [QuickInsertCategory] = [
+    /// Demo content for the UI tests and the store captures.
+    ///
+    /// This is NOT shipped. A fresh install has no names at all — see
+    /// `SharedStore.reload()`. It lives here so the screenshots and the tests
+    /// have something realistic to drive, nothing more.
+    static let demo: [QuickInsertCategory] = [
         QuickInsertCategory(
             name: "People",
             entries: [
