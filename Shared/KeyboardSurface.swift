@@ -144,6 +144,22 @@ struct KeyboardSurface: View {
                 .accessibilityLabel("Next keyboard")
             }
             panelTrack
+            if let onCollapse {
+                // The right end, where iOS puts the mic. A custom keyboard
+                // cannot reach the microphone at all, so dictation is not ours
+                // to offer; hiding the keyboard is, and it brackets the row the
+                // way the stock keyboard's is bracketed.
+                Button(action: onCollapse) {
+                    Image(systemName: "keyboard.chevron.compact.down")
+                        .font(.system(size: 20, weight: .regular))
+                        .foregroundStyle(palette.keyLabel)
+                        .frame(width: 44, height: 38)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("hide-keyboard")
+                .accessibilityLabel("Hide keyboard")
+            }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
@@ -173,11 +189,6 @@ struct KeyboardSurface: View {
                     HStack(spacing: 5) {
                         Image(systemName: item.symbol).font(.system(size: 14))
                         Text(item.title).font(.system(size: 14, weight: .semibold))
-                        if isSelected, onCollapse != nil {
-                            Image(systemName: "chevron.down")
-                                .font(.system(size: 10, weight: .bold))
-                                .opacity(0.9)
-                        }
                     }
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
