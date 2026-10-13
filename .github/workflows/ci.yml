@@ -31,14 +31,16 @@ jobs:
         run: |
           xcrun swift-format lint --recursive --strict \
             App Shared KeyboardExtension \
-            UITests/ExtensionInHostAppTest.swift
+            UITests/ExtensionInHostAppTest.swift \
+            UITests/StoreCaptureTests.swift
 
       - name: How to fix
         if: failure()
         run: |
           echo "Run this locally and commit the result:"
           echo "  xcrun swift-format format --in-place --recursive \\"
-          echo "    App Shared KeyboardExtension UITests/ExtensionInHostAppTest.swift"
+          echo "    App Shared KeyboardExtension \\"
+          echo "    UITests/ExtensionInHostAppTest.swift UITests/StoreCaptureTests.swift"
 
   security:
     name: Security

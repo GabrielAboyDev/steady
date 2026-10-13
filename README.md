@@ -24,6 +24,7 @@ Everything runs on the device. No network calls, and no "Allow Full Access" perm
 | `KeyboardExtension/` | The system-wide keyboard extension. Hosts the shared surface and types through `UITextDocumentProxy`. |
 | `App/` | The container app: enable-the-keyboard onboarding, settings, practice pad, and the editors for saved names and phrases. |
 | `UITests/` | XCUITests driving the real app on a simulator. |
+| `store/` | The App Store listing art, generated from the shipping build. See `store/README.md`. |
 
 ## How it works
 
@@ -80,6 +81,7 @@ Add New Keyboard › Steady. Hold the globe key in any app to switch to it.
 | `PredictiveEngineTests` | Completion ranking, next-letter weights, bigram prediction, the resize profiles, and bundled-lexicon loading. |
 | `SteadyUITests` | The keyboard's behaviour driven through the app's practice pad — resizing, chip insertion, quick-insert, and the phrase fill flow. Runs anywhere. |
 | `ExtensionInHostAppTest` | The keyboard running for real as a system keyboard in Safari. Needs a one-time simulator setup; skips itself with a pointer if that hasn't been done. |
+| `StoreCaptureTests` | Not a test — it drives the app to capture the App Store screenshots and the preview recording. Skips itself unless `STEADY_CAPTURE=1`. |
 
 ```sh
 scripts/enable-keyboard-in-simulator.sh    # enables Steady on the booted simulator
@@ -101,6 +103,36 @@ strength profiles to JavaScript, over the top 6,000 words of the same frequency 
 dictionary is compiled from. **Change the resize maths in `PredictiveEngine` and that demo
 needs the same change**, or the site stops telling the truth about the app. Everything the
 site needs — typeface included — is served from `docs/`; it makes no third-party requests.
+
+For search engines the site carries `robots.txt`, `sitemap.xml`, a `404.html`, and
+JSON-LD in each page's head: a `MobileApplication` and an eight-question `FAQPage` on
+the landing page, `BreadcrumbList` plus a `HowTo` for the three enabling steps on
+support. **The FAQ answers are duplicated between the visible cards and the schema** —
+edit a question and edit both, or the markup stops matching the page. Three things to
+update when a page is added: the sitemap, the footer links, and the canonical URL in
+the new page's head. `docs/social-card.png` is the `og:image`: the listing banner at
+1200 × 630, copied in by the store-asset build rather than maintained by hand.
+
+## The listing
+
+`store/` holds the App Store screenshots, app previews, and the wide header —
+all of it captured from the shipping build on a simulator rather than drawn,
+so a change to the keyboard is one command away from a corrected listing:
+
+```sh
+scripts/capture-store-assets.sh         # drive the app; raw screens + a screen recording
+scripts/build-store-assets.py           # compose the captioned frames and the header
+scripts/upload-store-assets.py          # dry run against App Store Connect
+scripts/upload-store-assets.py --confirm
+```
+
+The uploader writes to the app's **editable** App Store version only — it
+refuses a version that is live or in review, skips anything already on the
+listing, and never submits for review. It reads the App Store Connect API key
+from `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_KEY_PATH`.
+
+Captions live in `SHOTS` at the top of `scripts/build-store-assets.py`, and the
+order the screens are visited in lives in `UITests/StoreCaptureTests.swift`.
 
 ## Status
 

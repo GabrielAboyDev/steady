@@ -1,0 +1,14 @@
+# Every path in this repository is owned by one person.
+#
+# This file is only half the mechanism: it names the owner, and the ruleset on
+# main ("Require review from Code Owners") is what makes the name binding. A
+# pull request from anyone else cannot merge without an approving review from
+# the owner below, which is the point — outside contributions are welcome, but
+# nothing lands unreviewed.
+#
+# The glob is deliberately broad rather than a list of per-directory rules.
+# A narrower set of patterns would imply there are paths with a different
+# owner, and there aren't; a path that matched nothing would silently need no
+# code owner review at all.
+
+* @GabeAboy

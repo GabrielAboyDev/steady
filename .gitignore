@@ -25,3 +25,12 @@ research/
 
 # Downloaded dictionary source lists (see scripts/build-dictionary.sh)
 PredictiveEngine/corpus/
+
+# App Store capture intermediates — regenerate with scripts/capture-store-assets.sh
+store/raw/
+
+# Python bytecode from scripts/
+__pycache__/
+
+# Agent worktrees
+.claude/worktrees/
