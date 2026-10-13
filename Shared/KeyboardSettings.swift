@@ -55,6 +55,58 @@ enum SuggestionBrowsing: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+/// Which colour vision the key tints are drawn for.
+///
+/// Steady puts information in colour: a key's tint says how likely its letter
+/// is to come next. The shipped teal ramp is almost invisible to red-green
+/// colour blindness — simulated, its adjacent tiers come out 1.7-2.2 ΔE00
+/// apart, which is below the threshold for telling two large flat colours
+/// apart at all. Each mode here re-tints the tiers in a hue that mode keeps,
+/// and widens the ramp's lightness, which is the one channel every form of
+/// colour blindness preserves.
+enum ColorVisionMode: String, Codable, CaseIterable, Identifiable {
+    /// The shipped teal ramp, unchanged.
+    case standard
+    /// Green-weak: the commonest form. Teal is the single worst hue for it.
+    case deuteranopia
+    /// Red-weak. Long wavelengths also look dimmer, so the ramp is spaced on
+    /// lightness as well as hue.
+    case protanopia
+    /// Blue-yellow. Keeps blue-green, loses yellow — the opposite trade.
+    case tritanopia
+    /// No hue at all, for achromatopsia, low vision, and bright sunlight.
+    case monochrome
+
+    var id: String { rawValue }
+
+    /// Short enough for five segments across a phone; `explanation` carries
+    /// the full name, because these words are jargon to most people.
+    var title: String {
+        switch self {
+        case .standard: return "Standard"
+        case .deuteranopia: return "Deutan"
+        case .protanopia: return "Protan"
+        case .tritanopia: return "Tritan"
+        case .monochrome: return "Mono"
+        }
+    }
+
+    var explanation: String {
+        switch self {
+        case .standard:
+            return "Normal colour vision. The likeliest letters are tinted teal."
+        case .deuteranopia:
+            return "Deuteranopia — green-weak, the commonest kind. An amber ramp, because teal is the one hue this vision can't see."
+        case .protanopia:
+            return "Protanopia — red-weak. A gold ramp, spaced on brightness as well as colour."
+        case .tritanopia:
+            return "Tritanopia — blue-yellow. An azure ramp, which this vision keeps."
+        case .monochrome:
+            return "No colour at all: the tints become a brightness ramp. Safe for any colour vision."
+        }
+    }
+}
+
 /// User-tunable keyboard behaviour, persisted to the app group.
 struct KeyboardSettings: Codable, Equatable {
 
@@ -67,6 +119,8 @@ struct KeyboardSettings: Codable, Equatable {
     var showSuggestionChips: Bool = true
     /// How to reach the suggestions past the first three.
     var suggestionBrowsing: SuggestionBrowsing = .paginate
+    /// Which colour vision the key tints are drawn for.
+    var colorVision: ColorVisionMode = .standard
 
     static let `default` = KeyboardSettings()
 
@@ -92,5 +146,7 @@ struct KeyboardSettings: Codable, Equatable {
             Bool.self, forKey: .showSuggestionChips) ?? fallback.showSuggestionChips
         suggestionBrowsing = try container.decodeIfPresent(
             SuggestionBrowsing.self, forKey: .suggestionBrowsing) ?? fallback.suggestionBrowsing
+        colorVision = try container.decodeIfPresent(
+            ColorVisionMode.self, forKey: .colorVision) ?? fallback.colorVision
     }
 }

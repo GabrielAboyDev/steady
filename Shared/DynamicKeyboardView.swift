@@ -22,6 +22,9 @@ struct DynamicKeyboardView: View {
     let isStaticFallback: Bool
     /// Whether the host needs a keyboard-switch (globe) key.
     let showsNextKeyboardKey: Bool
+    /// Which colour vision to tint the tiers for. Defaulted, so a caller that
+    /// doesn't care keeps the shipped teal.
+    var colorVision: ColorVisionMode = .standard
 
     let onInsert: (String) -> Void
     let onDelete: () -> Void
@@ -141,16 +144,17 @@ struct DynamicKeyboardView: View {
 
     private func keyCap(for key: Character, metrics: KeyMetrics) -> some View {
         let label = isShifted && plane == .letters ? String(key).uppercased() : String(key)
+        let palette = colorVision.keyPalette
         return Button {
             onInsert(label)
             if isShifted { isShifted = false }
         } label: {
             ZStack {
                 RoundedRectangle(cornerRadius: 6)
-                    .fill(metrics.tier.face)
+                    .fill(palette.face(metrics.tier))
                     .overlay(
                         RoundedRectangle(cornerRadius: 6)
-                            .strokeBorder(Theme.brand, lineWidth: metrics.tier.isEmphasized ? 2 : 0)
+                            .strokeBorder(palette.ring, lineWidth: metrics.tier.isEmphasized ? 2 : 0)
                     )
                     .shadow(color: .black.opacity(0.22), radius: 0, x: 0, y: 1)
                     .padding(.horizontal, keySpacing / 2)
@@ -160,7 +164,7 @@ struct DynamicKeyboardView: View {
                         .system(
                             size: fontSize(for: metrics), weight: metrics.tier.isEmphasized ? .bold : .medium)
                     )
-                    .foregroundStyle(metrics.tier.label)
+                    .foregroundStyle(palette.label(metrics.tier))
                     .minimumScaleFactor(0.6)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
