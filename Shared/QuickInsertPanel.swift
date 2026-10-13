@@ -96,6 +96,6 @@ struct QuickInsertPanel: View {
                 .multilineTextAlignment(.center)
         }
         .padding(24)
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

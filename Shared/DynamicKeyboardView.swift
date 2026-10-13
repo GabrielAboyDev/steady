@@ -20,13 +20,13 @@ struct DynamicKeyboardView: View {
     let topScale: Double
     /// True in secure fields: render a plain, uniform layout.
     let isStaticFallback: Bool
-    /// Whether the host needs a keyboard-switch (globe) key.
-    let showsNextKeyboardKey: Bool
+    /// Which colour vision to tint the tiers for. Defaulted, so a caller that
+    /// doesn't care keeps the shipped teal.
+    var colorVision: ColorVisionMode = .standard
 
     let onInsert: (String) -> Void
     let onDelete: () -> Void
     let onReturn: () -> Void
-    var onNextKeyboard: () -> Void = {}
 
     @State private var plane: KeyPlane = .letters
     @State private var isShifted = false
@@ -144,17 +144,22 @@ struct DynamicKeyboardView: View {
 
     private func keyCap(for key: Character, metrics: KeyMetrics) -> some View {
         let label = isShifted && plane == .letters ? String(key).uppercased() : String(key)
+        // The colour-vision palette picks the light tints; the appearance
+        // palette (from the environment) decides whether they apply or the
+        // dark ramp does. See `KeyboardPalette.face(for:vision:)`.
+        let vision = colorVision.keyPalette
         return Button {
             onInsert(label)
             if isShifted { isShifted = false }
         } label: {
             ZStack {
                 RoundedRectangle(cornerRadius: 6)
-                    .fill(palette.face(for: metrics.tier))
+                    .fill(palette.face(for: metrics.tier, vision: vision))
                     .overlay(
                         RoundedRectangle(cornerRadius: 6)
                             .strokeBorder(
-                                palette.accentStroke, lineWidth: metrics.tier.isEmphasized ? 2 : 0)
+                                palette.ring(vision: vision),
+                                lineWidth: metrics.tier.isEmphasized ? 2 : 0)
                     )
                     .shadow(color: .black.opacity(palette.isDark ? 0.45 : 0.22), radius: 0, x: 0, y: 1)
                     .padding(.horizontal, keySpacing / 2)
@@ -164,7 +169,7 @@ struct DynamicKeyboardView: View {
                         .system(
                             size: fontSize(for: metrics), weight: metrics.tier.isEmphasized ? .bold : .medium)
                     )
-                    .foregroundStyle(palette.label(for: metrics.tier))
+                    .foregroundStyle(palette.label(for: metrics.tier, vision: vision))
                     .minimumScaleFactor(0.6)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -195,10 +200,6 @@ struct DynamicKeyboardView: View {
                 utilityKey(plane == .numbers ? "#+=" : "123", width: 46) {
                     plane = plane == .numbers ? .symbols : .numbers
                 }
-            }
-
-            if showsNextKeyboardKey {
-                utilityKey("🌐", width: 42) { onNextKeyboard() }
             }
 
             Button {

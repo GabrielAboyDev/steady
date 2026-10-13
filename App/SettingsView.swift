@@ -27,7 +27,8 @@ struct SettingsView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         ResizePreviewRow(
                             keyScales: previewController.keyScales,
-                            topScale: previewController.topScale
+                            topScale: previewController.topScale,
+                            colorVision: store.settings.colorVision
                         )
                         Text("Preview after typing “th”.")
                             .font(.system(size: 12))
@@ -100,6 +101,37 @@ struct SettingsView: View {
                     .foregroundStyle(Theme.textMuted)
                 }
 
+                Section("Colour vision") {
+                    Picker("Colour vision", selection: $store.settings.colorVision) {
+                        ForEach(ColorVisionMode.allCases) { mode in
+                            Text(mode.title).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("color-vision")
+
+                    Text(store.settings.colorVision.explanation)
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.textSecondary)
+
+                    // The tints are what carries "how likely is this letter",
+                    // so the choice has to be made by looking, not by reading
+                    // the name of a condition.
+                    VStack(alignment: .leading, spacing: 6) {
+                        ResizePreviewRow(
+                            keyScales: previewController.keyScales,
+                            topScale: previewController.topScale,
+                            colorVision: store.settings.colorVision
+                        )
+                        Text(
+                            "The top row after typing “th”, tinted by how likely each letter is to come next."
+                        )
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.textMuted)
+                    }
+                    .padding(.vertical, 4)
+                }
+
                 Section("Sharing") {
                     HStack {
                         Text(store.isSharingThroughAppGroup ? "Shared with the keyboard" : "Not shared yet")
@@ -147,11 +179,13 @@ struct ResizePreviewRow: View {
 
     let keyScales: [Character: KeyScale]
     let topScale: Double
+    var colorVision: ColorVisionMode = .standard
 
     private let keys = Array("qwertyuiop")
 
     var body: some View {
         GeometryReader { geometry in
+            let palette = colorVision.keyPalette
             let scales = keys.map { max(0, keyScales[$0]?.scale ?? 1) }
             let total = scales.reduce(0, +)
             HStack(alignment: .bottom, spacing: 0) {
@@ -167,11 +201,11 @@ struct ResizePreviewRow: View {
                                 size: min(max(11 * scale, 9), 20), weight: tier.isEmphasized ? .bold : .medium
                             )
                         )
-                        .foregroundStyle(tier.label)
+                        .foregroundStyle(palette.label(tier))
                         .frame(width: width, height: min(max(26 * scale, 18), 44))
                         .background(
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(tier.face)
+                                .fill(palette.face(tier))
                                 .padding(.horizontal, 1.5)
                         )
                         .opacity(isPossible ? 1 : 0.34)
@@ -181,5 +215,11 @@ struct ResizePreviewRow: View {
             .animation(.easeOut(duration: 0.18), value: total)
         }
         .frame(height: 44)
+        // Sat on the tray colour, like the real keyboard: an impossible key
+        // is drawn at 0.34 opacity, so what it composites onto decides whether
+        // it still reads as "out of the way". Measured against this grey.
+        .padding(3)
+        .background(Theme.keyTray)
+        .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
     }
 }
