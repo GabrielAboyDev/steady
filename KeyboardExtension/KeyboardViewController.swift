@@ -20,6 +20,14 @@ final class KeyboardViewController: UIInputViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        // A keyboard extension inherits the appearance of whatever app it is
+        // typing into, but Steady's palette is light-only (see `Theme`) — the
+        // key tray, the Names panel and the Phrases panel are all fixed light
+        // colours. Pin the whole surface to light so a dark-mode host can't
+        // drag system-drawn chrome (and anything added later) out from under
+        // them. `preferredColorScheme` is no use here: the SwiftUI surface is
+        // embedded in UIKit, not presented.
+        view.overrideUserInterfaceStyle = .light
         installSurface()
     }
 
