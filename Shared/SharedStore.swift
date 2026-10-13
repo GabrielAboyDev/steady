@@ -53,15 +53,11 @@ final class SharedStore: ObservableObject {
         let defaults = AppGroup.defaults
         settings = decode(KeyboardSettings.self, from: defaults.data(forKey: Key.settings)) ?? .default
 
-        let storedCategories = decode([QuickInsertCategory].self, from: defaults.data(forKey: Key.categories))
-        categories = storedCategories ?? QuickInsertCategory.seeded
-
-        let storedPhrases = decode([PhraseTemplate].self, from: defaults.data(forKey: Key.phrases))
-        phrases = storedPhrases ?? PhraseTemplate.seeded
-
-        // First launch: write the seeds through so the extension sees them too.
-        if storedCategories == nil { persist(categories, for: Key.categories) }
-        if storedPhrases == nil { persist(phrases, for: Key.phrases) }
+        // Empty on a fresh install. The app ships with no names and no phrases
+        // of its own: what someone says, and who they say it to, is theirs to
+        // write. Both panels already explain how to add the first one.
+        categories = decode([QuickInsertCategory].self, from: defaults.data(forKey: Key.categories)) ?? []
+        phrases = decode([PhraseTemplate].self, from: defaults.data(forKey: Key.phrases)) ?? []
     }
 
     /// Called by the extension so the app can tell the keyboard has been used.
@@ -75,12 +71,19 @@ final class SharedStore: ObservableObject {
     }
 
     /// Wipe stored state back to the shipped seeds. Used by UI tests.
-    func resetToSeeds() {
+    /// Wipe the app group and install the demo names and phrases.
+    ///
+    /// Only the UI tests and the store captures call this, through the
+    /// `-UITestResetState` launch argument. Nothing here reaches a shipping
+    /// install — a real one starts empty.
+    func resetToDemoContent() {
         let defaults = AppGroup.defaults
         for key in [Key.settings, Key.categories, Key.phrases, Key.keyboardLastRun] {
             defaults.removeObject(forKey: key)
         }
         reload()
+        categories = QuickInsertCategory.demo
+        phrases = PhraseTemplate.demo
     }
 
     // MARK: Persistence

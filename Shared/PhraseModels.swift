@@ -68,8 +68,10 @@ struct PhraseTemplate: Codable, Equatable, Identifiable {
 
 extension PhraseTemplate {
 
-    /// Seed phrases matching the fill-in mock.
-    static let seeded: [PhraseTemplate] = [
+    /// Demo content for the UI tests and the store captures.
+    ///
+    /// Not shipped: a fresh install has no phrases. See `SharedStore.reload()`.
+    static let demo: [PhraseTemplate] = [
         PhraseTemplate(
             title: "Running late",
             template: "Hi {name}, I'm running {minutes} late for {place}.",
