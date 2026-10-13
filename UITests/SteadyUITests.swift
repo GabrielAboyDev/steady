@@ -74,15 +74,20 @@ final class SteadyUITests: XCTestCase {
         XCTAssertTrue(chip.label.hasPrefix("Insert next word"), "chips should switch to next-word mode after a space")
     }
 
-    // US-008: a saved name inserts verbatim.
+    // US-008: a saved name inserts verbatim, and the keys come straight back.
     func testQuickInsertNameInsertsItsExactText() {
         app.buttons["panel-names"].tap()
         app.buttons["Insert Mom"].tap()
 
         XCTAssertEqual(padText, "Mom ")
+        XCTAssertTrue(
+            app.buttons["Space"].waitForExistence(timeout: 2),
+            "inserting a name should return the surface to the keyboard")
+        XCTAssertFalse(app.buttons["Insert Mom"].exists, "the Names panel should no longer be showing")
     }
 
-    // US-009: the guided fill flow assembles and inserts the sentence.
+    // US-009: the guided fill flow assembles the sentence and inserts it the
+    // moment the last blank is answered, then returns to the keyboard.
     func testPhraseFillFlowInsertsAssembledSentence() {
         app.buttons["panel-phrases"].tap()
         app.buttons["Use phrase Running late"].tap()
@@ -95,15 +100,36 @@ final class SteadyUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Blank 2 of 3"].waitForExistence(timeout: 2))
         app.buttons["Fill minutes with 10"].tap()
 
-        // Blank 3 of 3 — {place}.
+        // Blank 3 of 3 — {place}. Answering it is what inserts.
         XCTAssertTrue(app.staticTexts["Blank 3 of 3"].waitForExistence(timeout: 2))
         app.buttons["Fill place with the clinic"].tap()
 
-        let insert = app.buttons.matching(identifier: "insertSentence").firstMatch
-        XCTAssertTrue(insert.waitForExistence(timeout: 2))
-        insert.tap()
-
+        XCTAssertTrue(
+            app.buttons["Space"].waitForExistence(timeout: 2),
+            "answering the last blank should return the surface to the keyboard")
         XCTAssertEqual(padText, "Hi Mom, I'm running 10 late for the clinic.")
+    }
+
+    // US-009: a typed value for a blank behaves like a picked one — Done goes
+    // back to the remaining blanks, and the last answer inserts.
+    func testPhraseFillFlowAcceptsATypedValueForABlank() {
+        app.buttons["panel-phrases"].tap()
+        app.buttons["Use phrase Need a hand"].tap()
+
+        XCTAssertTrue(app.staticTexts["Blank 1 of 2"].waitForExistence(timeout: 2))
+        app.buttons["Fill name with Sarah"].tap()
+
+        // Blank 2 of 2 — {task}, typed rather than picked.
+        XCTAssertTrue(app.staticTexts["Blank 2 of 2"].waitForExistence(timeout: 2))
+        app.buttons["Type a value for task"].tap()
+        typeKeys("tea")
+        app.buttons["Done"].tap()
+
+        // The keys were already showing under the draft bar, so the bar going
+        // away is what says the surface is back on the plain keyboard.
+        XCTAssertFalse(app.buttons["Done"].waitForExistence(timeout: 1), "the draft bar should be gone")
+        XCTAssertTrue(app.buttons["Space"].exists, "the keyboard should still be showing")
+        XCTAssertEqual(padText, "Sarah, could you help me with tea when you get a chance?")
     }
 
     // US-006: turning resizing off stops keys from being hidden, and the

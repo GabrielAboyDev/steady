@@ -52,30 +52,12 @@ struct QuickInsertPanel: View {
 
     private var entryGrid: some View {
         ScrollView {
-            LazyVGrid(
-                columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)],
-                spacing: 10
-            ) {
+            LazyVGrid(columns: quickInsertGridColumns, spacing: 10) {
                 ForEach(selectedCategory?.entries ?? []) { entry in
                     Button {
                         onInsert(entry)
                     } label: {
-                        VStack(spacing: 2) {
-                            Text(entry.text)
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundStyle(Theme.textPrimary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.7)
-                            if let note = entry.note, !note.isEmpty {
-                                Text(note)
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(Theme.textMuted)
-                            }
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 60)
-                        .background(Theme.keyFace)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .shadow(color: .black.opacity(0.14), radius: 0, x: 0, y: 1)
+                        QuickInsertTile(text: entry.text, note: entry.note)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Insert \(entry.text)")
@@ -97,5 +79,38 @@ struct QuickInsertPanel: View {
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+/// The two-column grid the Names panel lays its tiles in. The phrase fill
+/// flow uses the same one, so a name looks the same wherever it is offered.
+let quickInsertGridColumns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
+
+/// One Names-panel tile: the text, with its note underneath when there is one.
+///
+/// Shared with the phrase fill flow so that choosing a name for a blank looks
+/// exactly like tapping it on the Names panel.
+struct QuickInsertTile: View {
+
+    let text: String
+    var note: String? = nil
+
+    var body: some View {
+        VStack(spacing: 2) {
+            Text(text)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(Theme.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            if let note, !note.isEmpty {
+                Text(note)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.textMuted)
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 60)
+        .background(Theme.keyFace)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.14), radius: 0, x: 0, y: 1)
     }
 }

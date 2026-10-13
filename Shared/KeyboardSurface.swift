@@ -247,12 +247,7 @@ struct KeyboardSurface: View {
             if let session = phraseSession {
                 PhraseFillView(
                     session: session,
-                    onInsert: { sentence in
-                        activeSink.insertText(sentence)
-                        phraseSession = nil
-                        panel = .keyboard
-                        refresh()
-                    },
+                    onInsert: insertPhrase,
                     onRequestFreeText: { slot in
                         freeTextBuffer.text = ""
                         freeTextSlot = slot
@@ -265,10 +260,15 @@ struct KeyboardSurface: View {
                 )
             } else {
                 PhrasePicker(phrases: store.phrases) { template in
-                    phraseSession = PhraseFillSession(
-                        template: template,
-                        nameOptions: store.allQuickInsertTexts
-                    )
+                    let session = PhraseFillSession(template: template, names: store.allQuickInsertEntries)
+                    // A phrase with no blanks has nothing to ask; it goes in
+                    // on the tap, the same as one whose last blank was just
+                    // answered.
+                    if session.isFinished {
+                        insertPhrase(session.assembledText)
+                    } else {
+                        phraseSession = session
+                    }
                 }
             }
         }
@@ -307,7 +307,14 @@ struct KeyboardSurface: View {
                 if !value.isEmpty { phraseSession?.select(value) }
                 freeTextSlot = nil
                 freeTextBuffer.text = ""
-                refresh()
+                // Back to the remaining blanks — or, when this was the last
+                // one, straight into the host and the keyboard, exactly as a
+                // tapped name would have done.
+                if let session = phraseSession, session.isFinished {
+                    insertPhrase(session.assembledText)
+                } else {
+                    refresh()
+                }
             } label: {
                 Text("Done")
                     .font(.system(size: 14, weight: .semibold))
@@ -340,8 +347,20 @@ struct KeyboardSurface: View {
         refresh()
     }
 
+    /// A name is one tap: it goes in and the keys come back, because the next
+    /// thing the user wants is almost always to carry on typing.
     private func insertQuickEntry(_ entry: QuickInsertEntry) {
         activeSink.insertText(entry.text + (entry.appendsSpace ? " " : ""))
+        panel = .keyboard
+        refresh()
+    }
+
+    /// The finished sentence goes to the host — never into a phrase draft, so
+    /// this writes to `sink` rather than `activeSink` — and the keys come back.
+    private func insertPhrase(_ sentence: String) {
+        sink.insertText(sentence)
+        phraseSession = nil
+        panel = .keyboard
         refresh()
     }
 

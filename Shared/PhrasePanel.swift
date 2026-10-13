@@ -55,8 +55,10 @@ struct PhrasePicker: View {
     }
 }
 
-/// The guided fill flow: one blank at a time, large chips, progress indicator,
-/// and the assembled sentence inserted when every required blank is answered.
+/// The guided fill flow: one blank at a time, the Names-panel tiles as the
+/// choices, a progress indicator, and the assembled sentence inserted the
+/// moment the last blank is answered. There is no review step: for the people
+/// this keyboard is for, a second "insert" tap is one more thing to hit.
 struct PhraseFillView: View {
 
     @ObservedObject var session: PhraseFillSession
@@ -71,8 +73,6 @@ struct PhraseFillView: View {
             Divider().overlay(Theme.ruleHairline)
             if let slot = session.currentSlot {
                 prompt(for: slot)
-            } else {
-                readyState
             }
             controls
         }
@@ -88,7 +88,7 @@ struct PhraseFillView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             if !session.progressLabel.isEmpty {
-                Text(session.currentSlot == nil ? "All blanks filled" : session.progressLabel)
+                Text(session.progressLabel)
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(Theme.brandDark)
                     .padding(.horizontal, 10)
@@ -133,26 +133,25 @@ struct PhraseFillView: View {
                 .padding(.horizontal, 12)
                 .padding(.top, 10)
 
+            if session.currentChoices.isEmpty && !slot.allowsFreeText {
+                Text("No names yet — add some in the Steady app.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Theme.textMuted)
+                    .padding(.horizontal, 12)
+            }
+
             ScrollView {
-                LazyVGrid(
-                    columns: [GridItem(.adaptive(minimum: 92), spacing: 10)],
-                    spacing: 10
-                ) {
-                    ForEach(session.currentOptions, id: \.self) { option in
+                // The Names panel's own grid and tiles, so a name offered here
+                // is the same tap it was over there.
+                LazyVGrid(columns: quickInsertGridColumns, spacing: 10) {
+                    ForEach(session.currentChoices) { choice in
                         Button {
-                            session.select(option)
+                            answer(with: choice.text)
                         } label: {
-                            Text(option)
-                                .font(.system(size: 17, weight: .semibold))
-                                .foregroundStyle(Theme.textPrimary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.7)
-                                .frame(maxWidth: .infinity, minHeight: 52)
-                                .background(Theme.keyFace)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            QuickInsertTile(text: choice.text, note: choice.note)
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel("Fill \(slot.name) with \(option)")
+                        .accessibilityLabel("Fill \(slot.name) with \(choice.text)")
                     }
 
                     if slot.allowsFreeText {
@@ -160,9 +159,9 @@ struct PhraseFillView: View {
                             onRequestFreeText(slot)
                         } label: {
                             Text("Type…")
-                                .font(.system(size: 17, weight: .semibold))
+                                .font(.system(size: 18, weight: .semibold))
                                 .foregroundStyle(Theme.brandDark)
-                                .frame(maxWidth: .infinity, minHeight: 52)
+                                .frame(maxWidth: .infinity, minHeight: 60)
                                 .background(Theme.brandSoft)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
@@ -170,19 +169,18 @@ struct PhraseFillView: View {
                         .accessibilityLabel("Type a value for \(slot.name)")
                     }
                 }
-                .padding(.horizontal, 12)
-                .padding(.bottom, 10)
+                .padding(10)
             }
         }
     }
 
-    private var readyState: some View {
-        Text("Review the sentence, then insert it.")
-            .font(.system(size: 14))
-            .foregroundStyle(Theme.textSecondary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 14)
+    /// Fill the current blank; when it was the last one, the sentence goes
+    /// straight in rather than waiting for a second tap.
+    private func answer(with value: String) {
+        session.select(value)
+        if session.isFinished {
+            onInsert(session.assembledText)
+        }
     }
 
     private var controls: some View {
@@ -203,6 +201,9 @@ struct PhraseFillView: View {
             }
             .buttonStyle(.plain)
 
+            // Only ever enabled while the blanks still to come are optional:
+            // it is how the user skips them. A required last blank inserts on
+            // its own.
             Button {
                 onInsert(session.assembledText)
             } label: {

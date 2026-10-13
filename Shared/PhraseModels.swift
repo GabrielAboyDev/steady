@@ -119,22 +119,32 @@ struct PhraseSegment: Identifiable {
     let kind: Kind
 }
 
+/// One tappable answer for a blank: a saved name, with its note, or one of
+/// the slot's own options.
+struct PhraseChoice: Identifiable, Equatable {
+    let id: String
+    let text: String
+    let note: String?
+}
+
 /// Walks the user through a phrase's slots one at a time, as the mock's
 /// "Blank 2 of 3" flow does, and assembles the sentence at the end.
 final class PhraseFillSession: ObservableObject {
 
     let template: PhraseTemplate
-    /// Options for any slot that draws from the Names list.
-    private let nameOptions: [String]
+    /// The user's saved names, offered for any slot that draws from them. The
+    /// entries rather than their texts, so the fill view can show the same
+    /// tiles — note and all — as the Names panel.
+    private let names: [QuickInsertEntry]
 
     @Published private(set) var values: [String: String] = [:]
     @Published private(set) var index: Int = 0
 
     private let slots: [PhraseSlot]
 
-    init(template: PhraseTemplate, nameOptions: [String]) {
+    init(template: PhraseTemplate, names: [QuickInsertEntry]) {
         self.template = template
-        self.nameOptions = nameOptions
+        self.names = names
         self.slots = template.resolvedSlots
     }
 
@@ -142,10 +152,18 @@ final class PhraseFillSession: ObservableObject {
         index < slots.count ? slots[index] : nil
     }
 
-    /// The chips to offer for the current slot.
-    var currentOptions: [String] {
+    /// The choices to offer for the current slot.
+    ///
+    /// A slot with nothing of its own to offer — no options, no free text —
+    /// falls back to the names too, so an unconfigured blank never dead-ends.
+    var currentChoices: [PhraseChoice] {
         guard let slot = currentSlot else { return [] }
-        return slot.drawsFromNames ? nameOptions : slot.options
+        if slot.drawsFromNames || (slot.options.isEmpty && !slot.allowsFreeText) {
+            return names.map { PhraseChoice(id: $0.id.uuidString, text: $0.text, note: $0.note) }
+        }
+        return slot.options.enumerated().map { option in
+            PhraseChoice(id: "option-\(option.offset)", text: option.element, note: nil)
+        }
     }
 
     /// "Blank 2 of 3", matching the mock's progress indicator.
@@ -159,6 +177,10 @@ final class PhraseFillSession: ObservableObject {
             !slot.isRequired || !(values[slot.name] ?? "").isEmpty
         }
     }
+
+    /// Nothing left to ask: the last blank has its answer. This is the moment
+    /// the sentence goes in — there is no separate review step.
+    var isFinished: Bool { currentSlot == nil && isComplete }
 
     var canGoBack: Bool { index > 0 }
 

@@ -65,9 +65,15 @@ final class SharedStore: ObservableObject {
         AppGroup.defaults.set(Date(), forKey: Key.keyboardLastRun)
     }
 
-    /// Every quick-insert entry's text, used to fill `{name}` phrase slots.
+    /// Every quick-insert entry across the categories, in Names-panel order.
+    /// The phrase fill flow offers exactly these for a `{name}` blank.
+    var allQuickInsertEntries: [QuickInsertEntry] {
+        categories.flatMap(\.entries)
+    }
+
+    /// Just the texts, for the phrase editor's "these names will be offered" hint.
     var allQuickInsertTexts: [String] {
-        categories.flatMap { $0.entries.map(\.text) }
+        allQuickInsertEntries.map(\.text)
     }
 
     /// Wipe stored state back to the shipped seeds. Used by UI tests.
