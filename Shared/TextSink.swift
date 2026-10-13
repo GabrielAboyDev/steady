@@ -8,10 +8,19 @@ protocol TextSink: AnyObject {
     /// Text immediately before the cursor, used to derive the prediction prefix.
     /// Secure fields return nil.
     var contextBeforeInput: String? { get }
-    /// True in password fields, where prediction must stand down (FR-9).
-    var isSecureEntry: Bool { get }
+    /// What the field being typed into asks for: its capitalization,
+    /// correction and punctuation traits, its keyboard and return key types.
+    var traits: InputTraits { get }
     func insertText(_ text: String)
     func deleteBackward()
+    /// The system key click, for sinks that have one.
+    func playKeyClick()
+}
+
+extension TextSink {
+    /// True in password fields, where prediction must stand down (FR-9).
+    var isSecureEntry: Bool { traits.isSecure }
+    func playKeyClick() {}
 }
 
 /// An in-app text buffer, for the practice pad.
@@ -19,8 +28,15 @@ final class BufferTextSink: ObservableObject, TextSink {
 
     @Published var text: String = ""
 
+    /// What this buffer asks for. A plain text view by default: sentences
+    /// capitalized, every other trait deferring to the user's switches.
+    let traits: InputTraits
+
+    init(traits: InputTraits = .standard) {
+        self.traits = traits
+    }
+
     var contextBeforeInput: String? { text }
-    var isSecureEntry: Bool { false }
 
     func insertText(_ string: String) {
         text.append(string)

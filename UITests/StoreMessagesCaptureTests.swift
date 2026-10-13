@@ -141,11 +141,14 @@ final class StoreMessagesCaptureTests: XCTestCase {
     }
 
     /// Types into the compose field, re-sending anything the surface dropped.
+    ///
+    /// Compared without case: the scripts are lowercase, and the keyboard's
+    /// autocapitalisation puts the first letter of a sentence up itself.
     private func type(_ text: String) {
         for _ in 0..<3 {
             let current = draft
-            if current == text { return }
-            if text.hasPrefix(current) {
+            if current.lowercased() == text.lowercased() { return }
+            if text.lowercased().hasPrefix(current.lowercased()) {
                 typeRun(String(text.dropFirst(current.count)))
             } else {
                 clearDraft()
@@ -158,11 +161,12 @@ final class StoreMessagesCaptureTests: XCTestCase {
 
     private func waitForDraft(_ expected: String, failing: Bool = true) {
         let deadline = Date().addingTimeInterval(5)
-        while Date() < deadline && draft != expected {
+        while Date() < deadline && draft.lowercased() != expected.lowercased() {
             settle(0.2)
         }
         if failing {
-            XCTAssertEqual(draft, expected, "the compose field does not hold the shot's text")
+            XCTAssertEqual(
+                draft.lowercased(), expected.lowercased(), "the compose field does not hold the shot's text")
         }
     }
 

@@ -121,19 +121,20 @@ enum ColorVisionMode: String, Codable, CaseIterable, Identifiable {
         }
     }
 
+    /// Two lines at most on a phone, and no dashes: each one names the
+    /// condition in plain words, then says which ramp it gets.
     var explanation: String {
         switch self {
         case .standard:
             return "Normal colour vision. The likeliest letters are tinted teal."
         case .deuteranopia:
-            return
-                "Deuteranopia — green-weak, the commonest kind. An amber ramp, because teal is the one hue this vision can't see."
+            return "Deuteranopia, green-weak and the commonest kind. An amber ramp instead of teal."
         case .protanopia:
-            return "Protanopia — red-weak. A gold ramp, spaced on brightness as well as colour."
+            return "Protanopia, red-weak. A gold ramp, spaced on brightness as well as colour."
         case .tritanopia:
-            return "Tritanopia — blue-yellow. An azure ramp, which this vision keeps."
+            return "Tritanopia, blue-yellow. An azure ramp, a hue this vision keeps."
         case .monochrome:
-            return "No colour at all: the tints become a brightness ramp. Safe for any colour vision."
+            return "No colour at all. The tints become a brightness ramp, safe for any vision."
         }
     }
 }
@@ -154,6 +155,28 @@ struct KeyboardSettings: Codable, Equatable {
     var keyboardAppearance: KeyboardAppearance = .system
     /// Which colour vision the key tints are drawn for.
     var colorVision: ColorVisionMode = .standard
+
+    // MARK: Typing
+
+    // These mirror Settings > General > Keyboard. iOS never lets a keyboard
+    // extension read the real ones, so they are asked again here, with the
+    // same defaults the system has. A text field's own traits still win: a
+    // field that turns autocorrect off stays off whatever is chosen here.
+
+    /// Shift goes up at the start of a sentence (or wherever the field asks).
+    var autoCapitalization: Bool = true
+    /// Fix a misspelled word when space or punctuation finishes it.
+    var autoCorrection: Bool = true
+    /// Double-tap shift to lock it.
+    var enableCapsLock: Bool = true
+    /// Curly quotes and an em dash for two hyphens.
+    var smartPunctuation: Bool = true
+    /// Two quick spaces end the sentence with a full stop.
+    var periodShortcut: Bool = true
+    /// Expand the text replacements set up in iOS, and know contact names.
+    var textReplacement: Bool = true
+    /// Offer the spell checker's guesses among the suggestions.
+    var spellingSuggestions: Bool = true
 
     static let `default` = KeyboardSettings()
 
@@ -190,5 +213,19 @@ struct KeyboardSettings: Codable, Equatable {
         colorVision =
             try container.decodeIfPresent(
                 ColorVisionMode.self, forKey: .colorVision) ?? fallback.colorVision
+        autoCapitalization =
+            try container.decodeIfPresent(Bool.self, forKey: .autoCapitalization) ?? fallback.autoCapitalization
+        autoCorrection =
+            try container.decodeIfPresent(Bool.self, forKey: .autoCorrection) ?? fallback.autoCorrection
+        enableCapsLock =
+            try container.decodeIfPresent(Bool.self, forKey: .enableCapsLock) ?? fallback.enableCapsLock
+        smartPunctuation =
+            try container.decodeIfPresent(Bool.self, forKey: .smartPunctuation) ?? fallback.smartPunctuation
+        periodShortcut =
+            try container.decodeIfPresent(Bool.self, forKey: .periodShortcut) ?? fallback.periodShortcut
+        textReplacement =
+            try container.decodeIfPresent(Bool.self, forKey: .textReplacement) ?? fallback.textReplacement
+        spellingSuggestions =
+            try container.decodeIfPresent(Bool.self, forKey: .spellingSuggestions) ?? fallback.spellingSuggestions
     }
 }

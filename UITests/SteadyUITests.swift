@@ -23,9 +23,13 @@ final class SteadyUITests: XCTestCase {
         app.staticTexts.matching(identifier: "practicePadText").firstMatch.label
     }
 
+    /// Waits for each key first: the first tap of a test can land before the
+    /// keyboard has rendered, and a tap sent then finds nothing.
     private func typeKeys(_ letters: String) {
         for letter in letters {
-            app.buttons[String(letter)].firstMatch.tap()
+            let key = app.buttons[String(letter)].firstMatch
+            XCTAssertTrue(key.waitForExistence(timeout: 5), "key \(letter) was not on screen")
+            key.tap()
         }
     }
 
@@ -61,7 +65,10 @@ final class SteadyUITests: XCTestCase {
         let word = chip.label.replacingOccurrences(of: "Complete word as ", with: "")
         chip.tap()
 
-        XCTAssertEqual(padText, word + " ", "the chip should replace \"th\" with the full word plus a space")
+        // Auto-capitalisation put the first letter up, and the completion
+        // keeps the casing of what was typed.
+        let expected = word.prefix(1).uppercased() + word.dropFirst() + " "
+        XCTAssertEqual(padText, expected, "the chip should replace \"Th\" with the full word plus a space")
     }
 
     // US-004: after a space the chips become next-word predictions.
@@ -145,9 +152,31 @@ final class SteadyUITests: XCTestCase {
         XCTAssertTrue(app.buttons["z"].exists)
     }
 
-    // US-007: the practice pad echoes what was typed.
+    // US-007: the practice pad echoes what was typed. The first letter is a
+    // capital: the pad is a sentence field, and shift is up when it starts.
     func testPracticePadShowsTypedText() {
         typeKeys("the")
-        XCTAssertEqual(padText, "the")
+        XCTAssertEqual(padText, "The")
+    }
+
+    // Autocapitalisation: shift is up for the first letter only, and comes
+    // back down for the next word.
+    func testAutocapitalisationLiftsOnlyTheFirstLetter() {
+        typeKeys("hi")
+        app.buttons["Space"].tap()
+        typeKeys("ok")
+        XCTAssertEqual(padText, "Hi ok")
+    }
+
+    // Autocorrection: a misspelling is fixed on the space, and backspace
+    // right after puts the original back.
+    func testAutocorrectFixesOnSpaceAndBackspaceReverts() {
+        typeKeys("teh")
+        app.buttons["Space"].tap()
+        let corrected = padText
+        XCTAssertNotEqual(corrected, "Teh ", "the space should have corrected the word")
+        XCTAssertTrue(corrected.hasSuffix(" "), "the space should still follow the corrected word")
+        app.buttons["Delete"].tap()
+        XCTAssertEqual(padText, "Teh", "backspace right after a correction should put the original back")
     }
 }

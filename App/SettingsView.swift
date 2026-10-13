@@ -113,6 +113,10 @@ struct SettingsView: View {
                     Text(store.settings.colorVision.explanation)
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.textSecondary)
+                        // Two lines, whatever the phone: the copy is written
+                        // to fit, and this keeps a narrow screen honest.
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.85)
 
                     // The tints are what carries "how likely is this letter",
                     // so the choice has to be made by looking, not by reading
@@ -130,6 +134,56 @@ struct SettingsView: View {
                         .foregroundStyle(Theme.textMuted)
                     }
                     .padding(.vertical, 4)
+                }
+
+                Section("Typing") {
+                    Toggle(isOn: $store.settings.autoCapitalization) {
+                        settingLabel(
+                            "Auto-capitalisation",
+                            detail: "Shift goes up at the start of a sentence."
+                        )
+                    }
+                    Toggle(isOn: $store.settings.autoCorrection) {
+                        settingLabel(
+                            "Auto-correction",
+                            detail: "Fix a misspelled word when you type a space. Backspace puts it back."
+                        )
+                    }
+                    Toggle(isOn: $store.settings.spellingSuggestions) {
+                        settingLabel(
+                            "Spelling suggestions",
+                            detail: "When a word isn't in the dictionary, the chips offer the spell checker's guesses."
+                        )
+                    }
+                    Toggle(isOn: $store.settings.enableCapsLock) {
+                        settingLabel(
+                            "Enable caps lock",
+                            detail: "Double-tap shift to lock it."
+                        )
+                    }
+                    Toggle(isOn: $store.settings.smartPunctuation) {
+                        settingLabel(
+                            "Smart punctuation",
+                            detail: "Curly quotes, and two hyphens become a dash."
+                        )
+                    }
+                    Toggle(isOn: $store.settings.periodShortcut) {
+                        settingLabel(
+                            "“.” shortcut",
+                            detail: "Two quick spaces end the sentence with a full stop."
+                        )
+                    }
+                    Toggle(isOn: $store.settings.textReplacement) {
+                        settingLabel(
+                            "Text replacement",
+                            detail: "Use the shortcuts from Settings > General > Keyboard > Text Replacement, and know your contacts' names."
+                        )
+                    }
+                    Text(
+                        "iOS doesn't let a keyboard read Settings > General > Keyboard, so these ask again. A text field that turns one of them off is always obeyed. Keyboard clicks follow the iOS setting on their own."
+                    )
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.textMuted)
                 }
 
                 Section("Sharing") {

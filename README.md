@@ -51,6 +51,25 @@ you're reaching for doesn't move out from under you.
 Three resize profiles are exposed in settings: **Off**, **Medium** (unlikely letters shrink
 and fade), and **Aggressive** (impossible letters are removed outright).
 
+## What the keyboard inherits from iOS
+
+A keyboard extension can't read Settings › General › Keyboard — the global Auto-Correction,
+Smart Punctuation and the rest live where the sandbox can't see. What it *can* read is the
+text field it's typing into: every field carries its own autocapitalization, autocorrection,
+spell-checking and smart-punctuation traits, plus a keyboard type (number pad, email, URL…),
+a return key type (Go, Search, Send…) and an appearance. `Shared/InputTraits.swift` reads
+those off the document proxy, and a field that says "off" is obeyed outright. When a field
+defers, the matching switch in Steady's own Settings › Typing section decides — those mirror
+the iOS ones, with the same defaults, because the real ones are unreadable.
+
+`Shared/TextComposer.swift` applies the result between the keys and the field: shift at
+the start of a sentence, caps lock on a double tap, autocorrection on space (backspace puts
+the word back), text replacements and contact names from the system lexicon
+(`requestSupplementaryLexicon`, granted without Full Access), spelling guesses in the
+suggestion row (`UITextChecker`), curly quotes and em dashes, the two-space full stop, and
+a space before a name or phrase dropped in mid-sentence. Keyboard clicks come through
+`UIInputViewAudioFeedback`, so iOS itself honours the user's Keyboard Clicks switch.
+
 ## Beyond typing
 
 - **Names** — saved entries that insert verbatim, for proper nouns prediction will never guess.

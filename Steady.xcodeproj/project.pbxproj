@@ -25,6 +25,10 @@
 		1C000000000000000000000D /* SharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B000000000000000000000E /* SharedStore.swift */; };
 		1C000000000000000000000E /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B000000000000000000000F /* Theme.swift */; };
 		1C000000000000000000000F /* TextSink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000010 /* TextSink.swift */; };
+		1C0000000000000000000041 /* TextComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000041 /* TextComposer.swift */; };
+		1D0000000000000000000041 /* TextComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000041 /* TextComposer.swift */; };
+		1C0000000000000000000040 /* InputTraits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000040 /* InputTraits.swift */; };
+		1D0000000000000000000040 /* InputTraits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000040 /* InputTraits.swift */; };
 		1C0000000000000000000010 /* PredictionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000011 /* PredictionController.swift */; };
 		1C0000000000000000000011 /* DynamicKeyboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000012 /* DynamicKeyboardView.swift */; };
 		1C0000000000000000000012 /* SuggestionBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000013 /* SuggestionBar.swift */; };
@@ -105,6 +109,8 @@
 		1B000000000000000000000E /* SharedStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedStore.swift; sourceTree = "<group>"; };
 		1B000000000000000000000F /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		1B0000000000000000000010 /* TextSink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextSink.swift; sourceTree = "<group>"; };
+		1B0000000000000000000041 /* TextComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextComposer.swift; sourceTree = "<group>"; };
+		1B0000000000000000000040 /* InputTraits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputTraits.swift; sourceTree = "<group>"; };
 		1B0000000000000000000011 /* PredictionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PredictionController.swift; sourceTree = "<group>"; };
 		1B0000000000000000000012 /* DynamicKeyboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicKeyboardView.swift; sourceTree = "<group>"; };
 		1B0000000000000000000013 /* SuggestionBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionBar.swift; sourceTree = "<group>"; };
@@ -210,6 +216,8 @@
 				1B000000000000000000000E /* SharedStore.swift */,
 				1B000000000000000000000F /* Theme.swift */,
 				1B0000000000000000000010 /* TextSink.swift */,
+				1B0000000000000000000041 /* TextComposer.swift */,
+				1B0000000000000000000040 /* InputTraits.swift */,
 				1B0000000000000000000011 /* PredictionController.swift */,
 				1B0000000000000000000012 /* DynamicKeyboardView.swift */,
 				1B0000000000000000000013 /* SuggestionBar.swift */,
@@ -386,6 +394,8 @@
 				1C000000000000000000000D /* SharedStore.swift in Sources */,
 				1C000000000000000000000E /* Theme.swift in Sources */,
 				1C000000000000000000000F /* TextSink.swift in Sources */,
+				1C0000000000000000000041 /* TextComposer.swift in Sources */,
+				1C0000000000000000000040 /* InputTraits.swift in Sources */,
 				1C0000000000000000000010 /* PredictionController.swift in Sources */,
 				1C0000000000000000000011 /* DynamicKeyboardView.swift in Sources */,
 				1C0000000000000000000012 /* SuggestionBar.swift in Sources */,
@@ -407,6 +417,8 @@
 				1D000000000000000000001B /* SharedStore.swift in Sources */,
 				1D000000000000000000001C /* Theme.swift in Sources */,
 				1D000000000000000000001D /* TextSink.swift in Sources */,
+				1D0000000000000000000041 /* TextComposer.swift in Sources */,
+				1D0000000000000000000040 /* InputTraits.swift in Sources */,
 				1D000000000000000000001E /* PredictionController.swift in Sources */,
 				1D000000000000000000001F /* DynamicKeyboardView.swift in Sources */,
 				1D0000000000000000000020 /* SuggestionBar.swift in Sources */,

@@ -9,13 +9,14 @@ struct PracticePadView: View {
     @EnvironmentObject private var store: SharedStore
     @StateObject private var buffer = BufferTextSink()
     @StateObject private var controller = PredictionController()
+    @StateObject private var composer = TextComposer()
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 pad
                 Spacer(minLength: 0)
-                KeyboardSurface(store: store, controller: controller, sink: buffer)
+                KeyboardSurface(store: store, controller: controller, composer: composer, sink: buffer)
             }
             .background(Theme.surfaceBase)
             .navigationTitle("Practice")

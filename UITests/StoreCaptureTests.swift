@@ -142,11 +142,14 @@ final class StoreCaptureTests: XCTestCase {
     /// still resizing lands on the gap a shrinking key left behind — so this
     /// re-types whatever is missing rather than failing. A frame showing text
     /// the app never produced would be worse than a slow run.
+    ///
+    /// Compared without case: the scripts are lowercase, and the keyboard's
+    /// autocapitalisation puts the first letter of a sentence up itself.
     private func type(_ sentence: String, pause: TimeInterval = 0) {
         for _ in 0..<3 {
             let typed = padText
-            if typed == sentence { return }
-            if sentence.hasPrefix(typed) {
+            if typed.lowercased() == sentence.lowercased() { return }
+            if sentence.lowercased().hasPrefix(typed.lowercased()) {
                 typeRun(String(sentence.dropFirst(typed.count)), pause: pause)
             } else {
                 // Something other than a dropped key — start the line again.
@@ -160,11 +163,12 @@ final class StoreCaptureTests: XCTestCase {
 
     private func waitForPad(_ expected: String, failing: Bool = true) {
         let deadline = Date().addingTimeInterval(5)
-        while Date() < deadline && padText != expected {
+        while Date() < deadline && padText.lowercased() != expected.lowercased() {
             Thread.sleep(forTimeInterval: 0.2)
         }
         if failing {
-            XCTAssertEqual(padText, expected, "the pad did not end up with the text the shot needs")
+            XCTAssertEqual(
+                padText.lowercased(), expected.lowercased(), "the pad did not end up with the text the shot needs")
         }
     }
 

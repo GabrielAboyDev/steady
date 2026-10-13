@@ -10,21 +10,45 @@ final class KeyboardViewController: UIInputViewController {
 
     private let store = SharedStore.shared
     private let controller = PredictionController()
+    private let composer = TextComposer()
     private lazy var sink = ProxyTextSink(owner: self)
 
     /// Taller than the stock keyboard on purpose: the whole point is bigger,
     /// easier-to-hit targets.
     ///
     /// It is also the exact sum of what the surface lays out, because anything
-    /// short clips the bottom row of keys: suggestions 32 + toolbar 42 + keys
-    /// 270 = 344, plus 4 of slack. (Before the paddings were trimmed this was
-    /// 398, and at 390 the stack was already 4pt over.)
-    private let surfaceHeight: CGFloat = 348
+    /// short clips the bottom row of keys: suggestions 32 + toolbar 42 (a
+    /// 38pt track with 4 above it) + keys 233 (three 55pt rows, a 44pt bottom
+    /// row, 18 of row spacing, 6 below). Row height is the key height times
+    /// the growth cap in `DynamicKeyboardView`; the cap went from 1.5 to 1.25,
+    /// which with the dropped paddings took this from 348 to 307.
+    private let surfaceHeight: CGFloat = 307
 
     private var hostingController: UIHostingController<KeyboardSurface>?
 
+    /// The input view adopts `UIInputViewAudioFeedback`, which is what lets
+    /// `playInputClick` sound — and lets iOS mute it when the user has
+    /// Keyboard Clicks off. That is one native setting a custom keyboard
+    /// does inherit, by not deciding for itself.
+    override func loadView() {
+        let input = ClickingInputView(frame: .zero, inputViewStyle: .keyboard)
+        inputView = input
+        view = input
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
+        // The user's text replacements and contact names. Granted to every
+        // keyboard, Full Access or not, and it comes back asynchronously.
+        requestSupplementaryLexicon { [weak self] lexicon in
+            let entries = lexicon.entries.map {
+                LexiconEntry(userInput: $0.userInput, documentText: $0.documentText)
+            }
+            DispatchQueue.main.async {
+                self?.composer.lexicon = entries
+                self?.controller.lexicon = entries
+            }
+        }
         // Nothing pins the appearance here on purpose. A keyboard extension
         // inherits the appearance of the app it is typing into, and that is
         // exactly what `KeyboardAppearance.system` needs to read. Pinning the
@@ -57,6 +81,7 @@ final class KeyboardViewController: UIInputViewController {
         let surface = KeyboardSurface(
             store: store,
             controller: controller,
+            composer: composer,
             sink: sink,
             showsNextKeyboardKey: needsInputModeSwitchKey,
             onNextKeyboard: { [weak self] in self?.advanceToNextInputMode() },
@@ -86,8 +111,13 @@ final class KeyboardViewController: UIInputViewController {
 
     private func refreshPredictions() {
         controller.update(settings: store.settings)
-        controller.refresh(context: sink.contextBeforeInput, isSecure: sink.isSecureEntry)
+        controller.refresh(context: sink.contextBeforeInput, traits: sink.traits)
     }
+}
+
+/// A `UIInputView` that opts into the system key click.
+private final class ClickingInputView: UIInputView, UIInputViewAudioFeedback {
+    var enableInputClicksWhenVisible: Bool { true }
 }
 
 /// Bridges the shared keyboard UI onto the host app's text field.
@@ -103,16 +133,13 @@ final class ProxyTextSink: TextSink {
 
     var contextBeforeInput: String? { proxy?.documentContextBeforeInput }
 
-    /// In a password field iOS reports secure entry; prediction and resizing
-    /// stand down and the layout falls back to a static QWERTY (FR-9).
-    ///
-    /// `isSecureTextEntry` is an optional requirement of `UITextInputTraits`,
-    /// so it's read defensively rather than assumed present.
-    var isSecureEntry: Bool {
-        guard let object = proxy as? NSObject else { return false }
-        let selector = NSSelectorFromString("isSecureTextEntry")
-        guard object.responds(to: selector) else { return false }
-        return object.value(forKey: "isSecureTextEntry") as? Bool ?? false
+    /// Everything the host field says about itself, read off the proxy:
+    /// capitalization, correction and punctuation traits, keyboard and return
+    /// key types, appearance, and secure entry (a password field, where
+    /// prediction and resizing stand down — FR-9).
+    var traits: InputTraits {
+        guard let proxy else { return .standard }
+        return InputTraits(proxy)
     }
 
     func insertText(_ text: String) {
@@ -121,5 +148,10 @@ final class ProxyTextSink: TextSink {
 
     func deleteBackward() {
         proxy?.deleteBackward()
+    }
+
+    /// The system click. Silent when Keyboard Clicks is off in iOS Settings.
+    func playKeyClick() {
+        UIDevice.current.playInputClick()
     }
 }

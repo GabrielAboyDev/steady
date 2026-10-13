@@ -84,7 +84,9 @@ final class ExtensionInHostAppTest: XCTestCase {
         // Safari pads its address-bar accessibility value with a leading space,
         // so compare on the trimmed text and check the trailing space separately.
         let typed = (field.value as? String) ?? ""
-        XCTAssertEqual(typed.trimmingCharacters(in: .whitespaces), "the")
+        // Case-insensitive: the field's own autocapitalization trait decides
+        // whether the first letter went up, and that is Safari's to set.
+        XCTAssertEqual(typed.trimmingCharacters(in: .whitespaces).lowercased(), "the")
         XCTAssertTrue(typed.hasSuffix(" "), "the chip should leave a trailing space")
     }
 }

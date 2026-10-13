@@ -44,6 +44,9 @@ struct KeyboardSurface: View {
 
     @ObservedObject var store: SharedStore
     @ObservedObject var controller: PredictionController
+    /// Applies the typing rules — autocorrect, smart punctuation and the
+    /// rest — between the keys and the sink.
+    @ObservedObject var composer: TextComposer
 
     /// Where typed text lands.
     let sink: TextSink
@@ -65,17 +68,31 @@ struct KeyboardSurface: View {
     static let topCornerRadius: CGFloat = 12
 
     @State private var panel: KeyboardPanel = .keyboard
+    /// The shift key. Autocapitalization sets it after every refresh; the key
+    /// itself overrides it until the next letter.
+    @State private var isShifted = false
+    @State private var isCapsLocked = false
     @State private var phraseSession: PhraseFillSession?
     /// Non-nil while the user types a free-text value for a phrase blank.
     @State private var freeTextSlot: PhraseSlot?
-    @StateObject private var freeTextBuffer = BufferTextSink()
+    @StateObject private var freeTextBuffer = BufferTextSink(traits: .phraseBlank)
 
     /// In the extension this is the host app's appearance, which is what the
     /// `system` appearance setting follows.
     @Environment(\.colorScheme) private var hostColorScheme
 
+    /// The host's appearance, unless the field itself asks for a light or a
+    /// dark keyboard — a trait a field can set, and the stock keyboard obeys.
+    private var hostScheme: ColorScheme {
+        switch activeSink.traits.appearance {
+        case .dark: return .dark
+        case .light: return .light
+        default: return hostColorScheme
+        }
+    }
+
     private var palette: KeyboardPalette {
-        seated(store.settings.keyboardAppearance.palette(for: hostColorScheme))
+        seated(store.settings.keyboardAppearance.palette(for: hostScheme))
     }
 
     /// What the Names and Phrases panels draw with. They are always light (see
@@ -94,7 +111,7 @@ struct KeyboardSurface: View {
     /// to the opposite appearance, or a light panel in a dark host, keeps its
     /// own tray.
     private func seated(_ base: KeyboardPalette) -> KeyboardPalette {
-        let paneMatches = base.isDark == (hostColorScheme == .dark)
+        let paneMatches = base.isDark == (hostScheme == .dark)
         return sitsOnSystemBackdrop && paneMatches ? base.onSystemBackdrop : base
     }
 
@@ -153,6 +170,13 @@ struct KeyboardSurface: View {
         // default-tinted control) inside the keys and chips.
         .environment(\.colorScheme, palette.isDark ? .dark : .light)
         .onAppear(perform: refresh)
+        // Every refresh — a key here, or the host moving the cursor — re-reads
+        // autocapitalization. A manual shift lasts until the next letter, and
+        // caps lock until it is tapped off.
+        .onChange(of: controller.revision) { _ in
+            guard !isCapsLocked else { return }
+            isShifted = controller.autoShift
+        }
     }
 
     /// True while a panel that must stay light is on screen.
@@ -202,7 +226,9 @@ struct KeyboardSurface: View {
             panelTrack
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 4)
+        // Padding above only. Below, the keys' own growth headroom and the
+        // panels' insets already hold them off the track.
+        .padding(.top, 4)
         // The toolbar is keyboard chrome, so it follows the appearance setting
         // even while a (always-light) panel is showing below it. It takes the
         // tray's own colour rather than `toolbarBar`: a lighter bar between
@@ -257,11 +283,19 @@ struct KeyboardSurface: View {
     // MARK: Keyboard
 
     private var keyboardStack: some View {
-        DynamicKeyboardView(
+        let traits = activeSink.traits
+        let returnEnabled =
+            !(traits.enablesReturnKeyAutomatically && (activeSink.contextBeforeInput ?? "").isEmpty)
+        return DynamicKeyboardView(
             keyScales: controller.keyScales,
             topScale: controller.topScale,
             isStaticFallback: controller.isStaticFallback,
             colorVision: store.settings.colorVision,
+            traits: traits,
+            capsLockEnabled: controller.rules.capsLock,
+            returnEnabled: returnEnabled,
+            isShifted: $isShifted,
+            isCapsLocked: $isCapsLocked,
             onInsert: insert,
             onDelete: deleteBackward,
             onReturn: { insert("\n") }
@@ -366,19 +400,22 @@ struct KeyboardSurface: View {
     }
 
     private func insert(_ text: String) {
-        activeSink.insertText(text)
+        activeSink.playKeyClick()
+        composer.type(text, rules: controller.rules, into: activeSink)
         refresh()
     }
 
     private func deleteBackward() {
-        activeSink.deleteBackward()
+        activeSink.playKeyClick()
+        composer.deleteBackward(into: activeSink)
         refresh()
     }
 
     /// A name is one tap: it goes in and the keys come back, because the next
     /// thing the user wants is almost always to carry on typing.
     private func insertQuickEntry(_ entry: QuickInsertEntry) {
-        activeSink.insertText(entry.text + (entry.appendsSpace ? " " : ""))
+        activeSink.playKeyClick()
+        composer.insert(entry.text + (entry.appendsSpace ? " " : ""), rules: controller.rules, into: activeSink)
         panel = .keyboard
         refresh()
     }
@@ -386,30 +423,50 @@ struct KeyboardSurface: View {
     /// The finished sentence goes to the host — never into a phrase draft, so
     /// this writes to `sink` rather than `activeSink` — and the keys come back.
     private func insertPhrase(_ sentence: String) {
-        sink.insertText(sentence)
+        sink.playKeyClick()
+        composer.insert(sentence, rules: TypingRules(traits: sink.traits, settings: store.settings), into: sink)
         phraseSession = nil
         panel = .keyboard
         refresh()
     }
 
     /// Chips replace the fragment already typed (completions) or just append
-    /// (next-word predictions). Both leave a trailing space.
+    /// (next-word predictions). Both leave a trailing space. A completion
+    /// keeps the casing of the fragment it replaces — "Th" becomes "The" —
+    /// and a prediction follows the shift key, so a word picked at the start
+    /// of a sentence is capital.
     private func pickSuggestion(_ word: String) {
-        if !controller.suggestionsAreNextWord {
-            for _ in 0..<controller.currentPrefix.count {
-                activeSink.deleteBackward()
+        activeSink.playKeyClick()
+        let capitalization: Capitalization
+        if controller.suggestionsAreNextWord {
+            capitalization = isCapsLocked ? .all : isShifted ? .first : .none
+        } else {
+            let typed = TextComposer.trailingWord(in: activeSink.contextBeforeInput ?? "")
+            let letters = typed.filter(\.isLetter)
+            if letters.count > 1, letters == letters.uppercased() {
+                capitalization = .all
+            } else if letters.first?.isUppercase == true {
+                capitalization = .first
+            } else {
+                capitalization = .none
             }
         }
-        activeSink.insertText(word + " ")
+        composer.insertWord(
+            word,
+            replacingPrefix: controller.suggestionsAreNextWord ? 0 : controller.currentPrefix.count,
+            capitalization: capitalization,
+            rules: controller.rules,
+            into: activeSink
+        )
         refresh()
     }
 
     private func refresh() {
         controller.update(settings: store.settings)
-        controller.refresh(
-            context: activeSink.contextBeforeInput,
-            isSecure: activeSink.isSecureEntry
-        )
+        controller.refresh(context: activeSink.contextBeforeInput, traits: activeSink.traits)
+        // A saved name is spelled the way its owner spells it.
+        composer.knownWords = Set(
+            store.allQuickInsertTexts.flatMap { $0.split(separator: " ") }.map { $0.lowercased() })
     }
 }
 
