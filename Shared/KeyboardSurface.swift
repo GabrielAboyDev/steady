@@ -193,6 +193,7 @@ struct KeyboardSurface: View {
                 topScale: controller.topScale,
                 isStaticFallback: controller.isStaticFallback,
                 showsNextKeyboardKey: showsNextKeyboardKey,
+                colorVision: store.settings.colorVision,
                 onInsert: insert,
                 onDelete: deleteBackward,
                 onReturn: { insert("\n") },
