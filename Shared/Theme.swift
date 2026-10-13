@@ -20,6 +20,9 @@ enum Theme {
     static let surfaceBase = Color(hex: 0xF6F8F7)
     static let surfaceRaised = Color.white
     static let surfaceDraft = Color(hex: 0xEEF4F2)
+    /// The well a segmented control sits in — a step darker than the bar
+    /// behind it, so the unselected segments read as recessed.
+    static let segmentTrack = Color(hex: 0xE7ECEA)
 
     // Text
     static let textPrimary = Color(hex: 0x15201D)

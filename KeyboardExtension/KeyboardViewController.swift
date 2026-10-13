@@ -44,7 +44,8 @@ final class KeyboardViewController: UIInputViewController {
             controller: controller,
             sink: sink,
             showsNextKeyboardKey: needsInputModeSwitchKey,
-            onNextKeyboard: { [weak self] in self?.advanceToNextInputMode() }
+            onNextKeyboard: { [weak self] in self?.advanceToNextInputMode() },
+            onCollapse: { [weak self] in self?.dismissKeyboard() }
         )
 
         let host = UIHostingController(rootView: surface)

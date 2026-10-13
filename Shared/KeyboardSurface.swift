@@ -16,11 +16,13 @@ enum KeyboardPanel: String, CaseIterable, Identifiable {
         }
     }
 
-    var glyph: String {
+    /// SF Symbols rather than emoji: they take the segment's tint, so the
+    /// selected one reads white on brand instead of staying full-colour.
+    var symbol: String {
         switch self {
-        case .keyboard: return "⌨"
-        case .names: return "👤"
-        case .phrases: return "💬"
+        case .keyboard: return "keyboard"
+        case .names: return "person"
+        case .phrases: return "text.bubble"
         }
     }
 }
@@ -41,6 +43,10 @@ struct KeyboardSurface: View {
     /// Show the globe key (only the real extension needs one).
     var showsNextKeyboardKey: Bool = false
     var onNextKeyboard: () -> Void = {}
+    /// Hide the keyboard entirely. Only the extension can do this, so when it
+    /// is nil — in the practice pad — the toolbar drops the affordance rather
+    /// than offering a tap that would do nothing.
+    var onCollapse: (() -> Void)?
 
     @State private var panel: KeyboardPanel = .keyboard
     @State private var phraseSession: PhraseFillSession?
@@ -72,33 +78,57 @@ struct KeyboardSurface: View {
 
     // MARK: Toolbar
 
+    /// One inset track of equal thirds, which is the shape iOS already uses
+    /// for switching mode. The capsules it replaced were unequal and left a
+    /// gap on the right, so they read as filters rather than as a switch.
+    ///
+    /// Tapping the panel that is already showing collapses the keyboard, and
+    /// the chevron on that segment is what says so — it keeps the affordance
+    /// where the tap already is instead of spending width on a fourth button.
     private var toolbar: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 2) {
             ForEach(KeyboardPanel.allCases) { item in
                 let isSelected = panel == item && freeTextSlot == nil
                 Button {
-                    freeTextSlot = nil
-                    panel = item
-                    if item != .phrases { phraseSession = nil }
-                    refresh()
+                    if isSelected {
+                        onCollapse?()
+                    } else {
+                        freeTextSlot = nil
+                        panel = item
+                        if item != .phrases { phraseSession = nil }
+                        refresh()
+                    }
                 } label: {
                     HStack(spacing: 5) {
-                        Text(item.glyph).font(.system(size: 14))
+                        Image(systemName: item.symbol).font(.system(size: 14))
                         Text(item.title).font(.system(size: 14, weight: .semibold))
+                        if isSelected, onCollapse != nil {
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 10, weight: .bold))
+                                .opacity(0.9)
+                        }
                     }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                     .foregroundStyle(isSelected ? .white : Theme.textSecondary)
-                    .padding(.horizontal, 14)
-                    .frame(height: 38)
-                    .background(isSelected ? Theme.brand : Theme.surfaceRaised)
-                    .clipShape(Capsule())
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 34)
+                    .background(isSelected ? Theme.brand : .clear)
+                    .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    .shadow(color: isSelected ? Theme.brandDark.opacity(0.28) : .clear,
+                            radius: 1, y: 1)
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("panel-\(item.rawValue)")
                 .accessibilityLabel(item.title)
+                .accessibilityHint(
+                    isSelected && onCollapse != nil ? "Tap again to hide the keyboard" : "")
                 .accessibilityAddTraits(isSelected ? [.isSelected] : [])
             }
-            Spacer(minLength: 0)
         }
+        .padding(2)
+        .background(Theme.segmentTrack)
+        .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(Theme.surfaceBase)
