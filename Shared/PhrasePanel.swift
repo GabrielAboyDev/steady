@@ -19,7 +19,7 @@ struct PhrasePicker: View {
                         .multilineTextAlignment(.center)
                 }
                 .padding(24)
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
                     VStack(spacing: 10) {

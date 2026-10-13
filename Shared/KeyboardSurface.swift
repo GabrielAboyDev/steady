@@ -74,11 +74,17 @@ struct KeyboardSurface: View {
                 case .names:
                     QuickInsertPanel(categories: store.categories, onInsert: insertQuickEntry)
                         .modifier(LightPanel())
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 case .phrases:
                     phrasesPanel
                         .modifier(LightPanel())
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 }
             }
+            // The panels claim the full height whatever they hold. With
+            // nothing saved, "No names yet" is a few lines tall, and without
+            // this the surface shrank around it and the toolbar floated up —
+            // the one state every new install starts in.
 
             // Last, so it sits where iOS puts the globe/mic row: against the
             // bottom edge, under the thumbs, in the same place whichever panel
