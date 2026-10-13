@@ -74,11 +74,17 @@ struct KeyboardSurface: View {
                 case .names:
                     QuickInsertPanel(categories: store.categories, onInsert: insertQuickEntry)
                         .modifier(LightPanel())
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 case .phrases:
                     phrasesPanel
                         .modifier(LightPanel())
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 }
             }
+            // The panels claim the full height whatever they hold. With
+            // nothing saved, "No names yet" is a few lines tall, and without
+            // this the surface shrank around it and the toolbar floated up —
+            // the one state every new install starts in.
 
             // Last, so it sits where iOS puts the globe/mic row: against the
             // bottom edge, under the thumbs, in the same place whichever panel
@@ -120,6 +126,37 @@ struct KeyboardSurface: View {
     /// the chevron on that segment is what says so — it keeps the affordance
     /// where the tap already is instead of spending width on a fourth button.
     private var toolbar: some View {
+        HStack(spacing: 10) {
+            if showsNextKeyboardKey {
+                // The globe sits where iOS puts it, at the left end of the
+                // bottom row, with the panel switch beside it. It used to be a
+                // key inside the letter rows' bottom line, which is not where a
+                // thumb that has learned the stock keyboard goes looking.
+                Button(action: onNextKeyboard) {
+                    Image(systemName: "globe")
+                        .font(.system(size: 20, weight: .regular))
+                        .foregroundStyle(palette.keyLabel)
+                        .frame(width: 44, height: 38)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("next-keyboard")
+                .accessibilityLabel("Next keyboard")
+            }
+            panelTrack
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        // The toolbar is keyboard chrome, so it follows the appearance setting
+        // even while a (always-light) panel is showing below it. It takes the
+        // tray's own colour rather than `toolbarBar`: that token was chosen to
+        // sit a step above the keys when the toolbar was *above* them, and down
+        // here among the keys the lighter bar reads as a second, competing row.
+        .background(palette.tray)
+    }
+
+    /// The segmented switch between the three panels.
+    private var panelTrack: some View {
         HStack(spacing: 2) {
             ForEach(KeyboardPanel.allCases) { item in
                 let isSelected = panel == item && freeTextSlot == nil
@@ -165,14 +202,6 @@ struct KeyboardSurface: View {
         .padding(2)
         .background(palette.segmentTrack)
         .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        // The toolbar is keyboard chrome, so it follows the appearance setting
-        // even while a (always-light) panel is showing below it. It takes the
-        // tray's own colour rather than `toolbarBar`: that token was chosen to
-        // sit a step above the keys when the toolbar was *above* them, and down
-        // here among the keys the lighter bar reads as a second, competing row.
-        .background(palette.tray)
     }
 
     // MARK: Keyboard
@@ -192,12 +221,10 @@ struct KeyboardSurface: View {
                 keyScales: controller.keyScales,
                 topScale: controller.topScale,
                 isStaticFallback: controller.isStaticFallback,
-                showsNextKeyboardKey: showsNextKeyboardKey,
                 colorVision: store.settings.colorVision,
                 onInsert: insert,
                 onDelete: deleteBackward,
-                onReturn: { insert("\n") },
-                onNextKeyboard: onNextKeyboard
+                onReturn: { insert("\n") }
             )
         }
     }

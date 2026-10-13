@@ -20,8 +20,6 @@ struct DynamicKeyboardView: View {
     let topScale: Double
     /// True in secure fields: render a plain, uniform layout.
     let isStaticFallback: Bool
-    /// Whether the host needs a keyboard-switch (globe) key.
-    let showsNextKeyboardKey: Bool
     /// Which colour vision to tint the tiers for. Defaulted, so a caller that
     /// doesn't care keeps the shipped teal.
     var colorVision: ColorVisionMode = .standard
@@ -29,7 +27,6 @@ struct DynamicKeyboardView: View {
     let onInsert: (String) -> Void
     let onDelete: () -> Void
     let onReturn: () -> Void
-    var onNextKeyboard: () -> Void = {}
 
     @State private var plane: KeyPlane = .letters
     @State private var isShifted = false
@@ -203,10 +200,6 @@ struct DynamicKeyboardView: View {
                 utilityKey(plane == .numbers ? "#+=" : "123", width: 46) {
                     plane = plane == .numbers ? .symbols : .numbers
                 }
-            }
-
-            if showsNextKeyboardKey {
-                utilityKey("🌐", width: 42) { onNextKeyboard() }
             }
 
             Button {
