@@ -1,18 +1,38 @@
 import SwiftUI
 
+/// Either an existing phrase a user tapped in the list, or one just created
+/// by "Add phrase" — the two land on the same editor, but only the latter
+/// should grab the keyboard and focus the title.
+private enum PhraseRoute: Hashable {
+    case existing(PhraseTemplate.ID)
+    case justAdded(PhraseTemplate.ID)
+
+    var id: PhraseTemplate.ID {
+        switch self {
+        case .existing(let id), .justAdded(let id): return id
+        }
+    }
+
+    var isJustAdded: Bool {
+        switch self {
+        case .existing: return false
+        case .justAdded: return true
+        }
+    }
+}
+
 /// Manage phrase templates and their `{slot}` variables (US-009).
 struct PhrasesEditorView: View {
 
     @EnvironmentObject private var store: SharedStore
+    @State private var path: [PhraseRoute] = []
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             List {
                 Section {
                     ForEach($store.phrases) { $phrase in
-                        NavigationLink {
-                            PhraseEditor(phrase: $phrase, nameOptions: store.allQuickInsertTexts)
-                        } label: {
+                        NavigationLink(value: PhraseRoute.existing(phrase.id)) {
                             VStack(alignment: .leading, spacing: 3) {
                                 Text(phrase.title).font(.system(size: 16, weight: .medium))
                                 Text(phrase.template)
@@ -33,9 +53,9 @@ struct PhrasesEditorView: View {
 
                 Section {
                     Button {
-                        store.phrases.append(
-                            PhraseTemplate(title: "New phrase", template: "Hi {name}, ")
-                        )
+                        let phrase = PhraseTemplate(title: "", template: "Hi {name}, ")
+                        store.phrases.append(phrase)
+                        path.append(.justAdded(phrase.id))
                     } label: {
                         Label("Add phrase", systemImage: "plus.circle.fill")
                     }
@@ -43,6 +63,15 @@ struct PhrasesEditorView: View {
             }
             .navigationTitle("Phrases")
             .toolbar { EditButton() }
+            .navigationDestination(for: PhraseRoute.self) { route in
+                if let index = store.phrases.firstIndex(where: { $0.id == route.id }) {
+                    PhraseEditor(
+                        phrase: $store.phrases[index],
+                        nameOptions: store.allQuickInsertTexts,
+                        focusTitleOnAppear: route.isJustAdded
+                    )
+                }
+            }
         }
     }
 }
@@ -50,17 +79,29 @@ struct PhrasesEditorView: View {
 /// Edit one phrase: its title, its sentence, and each blank's options.
 private struct PhraseEditor: View {
 
+    private enum Field: Hashable {
+        case title
+        case template
+    }
+
     @Binding var phrase: PhraseTemplate
     let nameOptions: [String]
+    var focusTitleOnAppear: Bool = false
+
+    @FocusState private var focusedField: Field?
 
     var body: some View {
         Form {
             Section("Title") {
                 TextField("Title", text: $phrase.title)
+                    .focused($focusedField, equals: .title)
+                    .submitLabel(.next)
+                    .onSubmit { focusedField = .template }
             }
 
             Section("Sentence") {
                 TextField("Sentence with {blanks}", text: $phrase.template, axis: .vertical)
+                    .focused($focusedField, equals: .template)
                     .lineLimit(2...5)
                 Text(phrase.assembled(with: [:]))
                     .font(.system(size: 13))
@@ -75,9 +116,17 @@ private struct PhraseEditor: View {
                 }
             }
 
-            ForEach($phrase.slots) { $slot in
+            // Not `ForEach($phrase.slots)`: that hands each row a Binding
+            // subscripted by position into the array, and pasting into the
+            // sentence field can shrink `phrase.slots` (via `syncSlots`,
+            // below) while a Toggle here is still mid-render — SwiftUI then
+            // reads a stale offset and traps. Binding by the slot's own id
+            // instead means a row whose slot has since disappeared just
+            // reads its last known value and writes nowhere, instead of
+            // crashing.
+            ForEach(phrase.slots) { slot in
                 Section("{\(slot.name)}") {
-                    Toggle("Use my saved names", isOn: $slot.drawsFromNames)
+                    Toggle("Use my saved names", isOn: binding(for: slot, \.drawsFromNames))
 
                     if slot.drawsFromNames {
                         Text(
@@ -93,11 +142,13 @@ private struct PhraseEditor: View {
                             text: Binding(
                                 get: { slot.options.joined(separator: ", ") },
                                 set: { newValue in
-                                    slot.options =
-                                        newValue
-                                        .split(separator: ",")
-                                        .map { $0.trimmingCharacters(in: .whitespaces) }
-                                        .filter { !$0.isEmpty }
+                                    update(slot.id) {
+                                        $0.options =
+                                            newValue
+                                            .split(separator: ",")
+                                            .map { $0.trimmingCharacters(in: .whitespaces) }
+                                            .filter { !$0.isEmpty }
+                                    }
                                 }
                             ),
                             axis: .vertical
@@ -105,13 +156,16 @@ private struct PhraseEditor: View {
                         .lineLimit(1...4)
                     }
 
-                    Toggle("Allow typing a value", isOn: $slot.allowsFreeText)
-                    Toggle("Required", isOn: $slot.isRequired)
+                    Toggle("Allow typing a value", isOn: binding(for: slot, \.allowsFreeText))
+                    Toggle("Required", isOn: binding(for: slot, \.isRequired))
                 }
             }
         }
         .navigationTitle(phrase.title.isEmpty ? "Phrase" : phrase.title)
-        .onAppear(perform: syncSlots)
+        .onAppear {
+            syncSlots()
+            if focusTitleOnAppear { focusedField = .title }
+        }
         .onChange(of: phrase.template) { _ in syncSlots() }
     }
 
@@ -122,5 +176,21 @@ private struct PhraseEditor: View {
         if resolved != phrase.slots {
             phrase.slots = resolved
         }
+    }
+
+    /// A two-way binding to one field of one slot, found by id at read and
+    /// write time rather than captured by array position — see the comment
+    /// above the `ForEach` this backs.
+    private func binding<Value>(for slot: PhraseSlot, _ keyPath: WritableKeyPath<PhraseSlot, Value>) -> Binding<Value> {
+        Binding(
+            get: { slot[keyPath: keyPath] },
+            set: { newValue in update(slot.id) { $0[keyPath: keyPath] = newValue } }
+        )
+    }
+
+    /// Applies a change to the slot with this id, if it's still there.
+    private func update(_ id: PhraseSlot.ID, _ mutate: (inout PhraseSlot) -> Void) {
+        guard let index = phrase.slots.firstIndex(where: { $0.id == id }) else { return }
+        mutate(&phrase.slots[index])
     }
 }

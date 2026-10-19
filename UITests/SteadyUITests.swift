@@ -179,4 +179,39 @@ final class SteadyUITests: XCTestCase {
         app.buttons["Delete"].tap()
         XCTAssertEqual(padText, "Teh", "backspace right after a correction should put the original back")
     }
+
+    // Regression: a TestFlight crash. Deleting a `{blank}` marker out of the
+    // sentence — what's left after pasting over the selected text — drops
+    // that slot from `phrase.slots` while its Toggle is still on screen.
+    // `PhraseEditor` must read/write those Toggles by the slot's id rather
+    // than by array position, or SwiftUI traps on the now-stale index.
+    func testDeletingABlankFromTheSentenceDoesNotCrash() {
+        app.tabBars.buttons["Phrases"].tap()
+        app.buttons["Add phrase"].tap()
+
+        // The default template is "Hi {name}, ", which gives the editor one
+        // slot section — and one Toggle bound into `phrase.slots` — below.
+        let sentenceField = app.textFields.element(boundBy: 1)
+        XCTAssertTrue(sentenceField.waitForExistence(timeout: 5), "sentence field should exist")
+
+        // Tap near the right edge so the caret lands after "Hi {name}, "
+        // rather than at the start — a plain `.tap()` on a short field puts
+        // it at the beginning, where backspace would have nothing to do.
+        sentenceField.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
+
+        // Backspace through the whole default template, not via the
+        // system edit menu (double-tap-to-select is notoriously flaky in
+        // XCUITest). The keystroke that erases "{name}"'s closing brace is
+        // the one that drops the slot — the same moment a paste over the
+        // text does it in one step.
+        sentenceField.typeText(String(repeating: "\u{8}", count: "Hi {name}, ".count))
+        sentenceField.typeText("Running late for the thing")
+
+        XCTAssertEqual(app.state, .runningForeground, "deleting the {name} marker should not crash the app")
+        XCTAssertEqual(sentenceField.value as? String, "Running late for the thing")
+
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        app.tabBars.buttons["Practice"].tap()
+        XCTAssertEqual(app.state, .runningForeground, "the app should still be running back on Practice")
+    }
 }
