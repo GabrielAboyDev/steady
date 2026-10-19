@@ -23,6 +23,8 @@ struct DynamicKeyboardView: View {
     /// Which colour vision to tint the tiers for. Defaulted, so a caller that
     /// doesn't care keeps the shipped teal.
     var colorVision: ColorVisionMode = .standard
+    /// Ring and bold the single most likely next letter.
+    var highlightNextLetter = true
     /// What the field asks of the layout: which plane to open on, extra keys
     /// by the space bar, and what the return key says.
     var traits: InputTraits = .standard
@@ -40,16 +42,35 @@ struct DynamicKeyboardView: View {
     let onInsert: (String) -> Void
     let onDelete: () -> Void
     let onReturn: () -> Void
+    /// A drag on the space bar, in characters — positive right, negative left.
+    var onMoveCursor: (Int) -> Void = { _ in }
+    /// Holding delete past the tap threshold, once per word crossed.
+    var onDeleteWord: () -> Void = {}
 
     @State private var plane: KeyPlane
     /// When shift was last tapped, for the caps-lock double tap.
     @State private var lastShiftTap: Date?
+    /// Set once a touch on the space bar has dragged far enough to mean
+    /// "move the caret" rather than "type a space" — the stock keyboard's
+    /// press-and-hold-to-drag trackpad.
+    @State private var isSpaceTrackpadActive = false
+    /// How much of the drag's (cumulative, from touch-down) translation has
+    /// already been turned into caret steps, so the remainder — less than
+    /// one character — carries over instead of being measured twice.
+    @State private var spaceTrackpadConsumed: CGFloat = 0
+    /// Ticks once the delete key has been held past the tap threshold,
+    /// deleting one whole word per tick until the touch lifts.
+    @State private var deleteHoldTimer: Timer?
+    /// Set the first time that timer fires, so lifting the touch afterward
+    /// doesn't also fire the single-character tap.
+    @State private var didDeleteWordOnHold = false
 
     init(
         keyScales: [Character: KeyScale],
         topScale: Double,
         isStaticFallback: Bool,
         colorVision: ColorVisionMode = .standard,
+        highlightNextLetter: Bool = true,
         traits: InputTraits = .standard,
         capsLockEnabled: Bool = true,
         returnEnabled: Bool = true,
@@ -57,12 +78,15 @@ struct DynamicKeyboardView: View {
         isCapsLocked: Binding<Bool>,
         onInsert: @escaping (String) -> Void,
         onDelete: @escaping () -> Void,
-        onReturn: @escaping () -> Void
+        onReturn: @escaping () -> Void,
+        onMoveCursor: @escaping (Int) -> Void = { _ in },
+        onDeleteWord: @escaping () -> Void = {}
     ) {
         self.keyScales = keyScales
         self.topScale = topScale
         self.isStaticFallback = isStaticFallback
         self.colorVision = colorVision
+        self.highlightNextLetter = highlightNextLetter
         self.traits = traits
         self.capsLockEnabled = capsLockEnabled
         self.returnEnabled = returnEnabled
@@ -71,6 +95,8 @@ struct DynamicKeyboardView: View {
         self.onInsert = onInsert
         self.onDelete = onDelete
         self.onReturn = onReturn
+        self.onMoveCursor = onMoveCursor
+        self.onDeleteWord = onDeleteWord
         // A number field opens on the digits, as the stock keyboard does.
         _plane = State(initialValue: traits.opensOnNumbers ? .numbers : .letters)
     }
@@ -202,6 +228,7 @@ struct DynamicKeyboardView: View {
         // palette (from the environment) decides whether they apply or the
         // dark ramp does. See `KeyboardPalette.face(for:vision:)`.
         let vision = colorVision.keyPalette
+        let isEmphasized = metrics.tier.isEmphasized && highlightNextLetter
         return Button {
             onInsert(label)
             // One capital, then back down — unless locked. The surface then
@@ -215,7 +242,7 @@ struct DynamicKeyboardView: View {
                         RoundedRectangle(cornerRadius: 6)
                             .strokeBorder(
                                 palette.ring(vision: vision),
-                                lineWidth: metrics.tier.isEmphasized ? 2 : 0)
+                                lineWidth: isEmphasized ? 2 : 0)
                     )
                     .shadow(color: .black.opacity(palette.isDark ? 0.45 : 0.22), radius: 0, x: 0, y: 1)
                     .padding(.horizontal, keySpacing / 2)
@@ -223,7 +250,7 @@ struct DynamicKeyboardView: View {
                 Text(label)
                     .font(
                         .system(
-                            size: fontSize(for: metrics), weight: metrics.tier.isEmphasized ? .bold : .medium)
+                            size: fontSize(for: metrics), weight: isEmphasized ? .bold : .medium)
                     )
                     .foregroundStyle(palette.label(for: metrics.tier, vision: vision))
                     .minimumScaleFactor(0.6)
@@ -270,21 +297,9 @@ struct DynamicKeyboardView: View {
                 utilityKey(key, width: 36) { onInsert(key) }
             }
 
-            Button {
-                onInsert(" ")
-            } label: {
-                Text("space")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(palette.keyLabel)
-                    .frame(maxWidth: .infinity, minHeight: baseKeyHeight)
-                    .background(palette.keyFace)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Space")
+            spaceKey
 
-            utilityKey("⌫", width: 50, action: onDelete)
-                .accessibilityLabel("Delete")
+            deleteKey
 
             // The field's own return key: "search", "send", "go"… An action
             // key takes the accent, as the stock keyboard's does.
@@ -297,6 +312,103 @@ struct DynamicKeyboardView: View {
             .accessibilityLabel(traits.returnKeyLabel.capitalized)
         }
         .frame(height: baseKeyHeight)
+    }
+
+    /// How far a drag has to travel, in points, before it counts as one
+    /// caret step. Tuned against the stock keyboard's own trackpad feel —
+    /// close enough to a key's width that it reads as deliberate.
+    private let spaceTrackpadStep: CGFloat = 10
+    /// How far a touch can wander before it stops being a tap. Below this,
+    /// the lift still types a space.
+    private let spaceTrackpadTapTolerance: CGFloat = 4
+
+    /// Space bar. A tap types a space; press and drag turns it into a
+    /// trackpad that moves the caret instead, the way holding the stock
+    /// keyboard's space bar does — the label dims to say so.
+    private var spaceKey: some View {
+        Text(isSpaceTrackpadActive ? "" : "space")
+            .font(.system(size: 15, weight: .medium))
+            .foregroundStyle(palette.keyLabel)
+            .frame(maxWidth: .infinity, minHeight: baseKeyHeight)
+            .background(palette.keyFace.opacity(isSpaceTrackpadActive ? 0.6 : 1))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0, coordinateSpace: .local)
+                    .onChanged { value in
+                        let translation = value.translation.width
+                        if !isSpaceTrackpadActive, abs(translation) > spaceTrackpadTapTolerance {
+                            isSpaceTrackpadActive = true
+                            spaceTrackpadConsumed = 0
+                        }
+                        guard isSpaceTrackpadActive else { return }
+                        // `translation` is cumulative since touch-down, so
+                        // steps are measured against what's already been
+                        // spent rather than against the last callback.
+                        let unconsumed = translation - spaceTrackpadConsumed
+                        let steps = Int(unconsumed / spaceTrackpadStep)
+                        guard steps != 0 else { return }
+                        onMoveCursor(steps)
+                        spaceTrackpadConsumed += CGFloat(steps) * spaceTrackpadStep
+                    }
+                    .onEnded { _ in
+                        if !isSpaceTrackpadActive {
+                            onInsert(" ")
+                        }
+                        isSpaceTrackpadActive = false
+                        spaceTrackpadConsumed = 0
+                    }
+            )
+            // Not a `Button` — a plain gesture recognizer is what lets a
+            // drag keep tracking past the point a `Button` would cancel its
+            // press — so the button trait is added by hand to keep
+            // `app.buttons["Space"]` finding it in UI tests.
+            .accessibilityAddTraits(.isButton)
+            .accessibilityLabel("Space")
+            .accessibilityHint("Press and drag to move the cursor")
+    }
+
+    /// How long delete has to stay down before it starts clearing whole
+    /// words, and the interval between words after that.
+    private let deleteWordHoldInterval: TimeInterval = 0.45
+
+    /// Delete key. A tap removes one character; holding past
+    /// `deleteWordHoldInterval` starts clearing a whole word at a time,
+    /// until the touch lifts.
+    private var deleteKey: some View {
+        Text("⌫")
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundStyle(palette.keyLabel)
+            .frame(width: 50, height: baseKeyHeight)
+            .background(palette.keyUtility)
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0, coordinateSpace: .local)
+                    .onChanged { _ in
+                        guard deleteHoldTimer == nil else { return }
+                        didDeleteWordOnHold = false
+                        let timer = Timer(timeInterval: deleteWordHoldInterval, repeats: true) { _ in
+                            didDeleteWordOnHold = true
+                            onDeleteWord()
+                        }
+                        // `.common`, not the default mode, so the repeat
+                        // keeps firing while the gesture is actively
+                        // tracking this touch.
+                        RunLoop.main.add(timer, forMode: .common)
+                        deleteHoldTimer = timer
+                    }
+                    .onEnded { _ in
+                        deleteHoldTimer?.invalidate()
+                        deleteHoldTimer = nil
+                        if !didDeleteWordOnHold {
+                            onDelete()
+                        }
+                    }
+            )
+            .accessibilityAddTraits(.isButton)
+            .accessibilityLabel("Delete")
+            .accessibilityHint("Hold to delete a word at a time")
     }
 
     private var shiftSymbol: String {

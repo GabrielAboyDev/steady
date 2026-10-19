@@ -26,10 +26,6 @@ final class SharedStore: ObservableObject {
         didSet { persist(phrases, for: Key.phrases) }
     }
 
-    /// True when settings are genuinely being shared through the app group
-    /// rather than falling back to this process's own defaults.
-    var isSharingThroughAppGroup: Bool { AppGroup.isAvailable }
-
     /// When the keyboard extension last ran. Proves the extension is installed
     /// *and* that the app group round-trips (US-005 / US-006).
     var keyboardLastRun: Date? {

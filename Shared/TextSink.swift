@@ -13,6 +13,10 @@ protocol TextSink: AnyObject {
     var traits: InputTraits { get }
     func insertText(_ text: String)
     func deleteBackward()
+    /// Moves the caret without touching the text — positive steps right,
+    /// negative left — the way holding the space bar and dragging does on
+    /// the stock keyboard.
+    func moveCursor(by characterOffset: Int)
     /// The system key click, for sinks that have one.
     func playKeyClick()
 }
@@ -27,6 +31,12 @@ extension TextSink {
 final class BufferTextSink: ObservableObject, TextSink {
 
     @Published var text: String = ""
+    /// The caret as a character count from the start. Tracked separately
+    /// from `text` so the space-bar trackpad gesture has somewhere real to
+    /// move — code that resets `text` (the Clear button, a cancelled phrase
+    /// blank) doesn't also touch this, so every read clamps it to the
+    /// current length instead of trusting it stays in range.
+    @Published private(set) var cursorOffset: Int = 0
 
     /// What this buffer asks for. A plain text view by default: sentences
     /// capitalized, every other trait deferring to the user's switches.
@@ -36,14 +46,26 @@ final class BufferTextSink: ObservableObject, TextSink {
         self.traits = traits
     }
 
-    var contextBeforeInput: String? { text }
+    var contextBeforeInput: String? { String(text.prefix(clampedOffset)) }
 
     func insertText(_ string: String) {
-        text.append(string)
+        let offset = clampedOffset
+        let index = text.index(text.startIndex, offsetBy: offset)
+        text.insert(contentsOf: string, at: index)
+        cursorOffset = offset + string.count
     }
 
     func deleteBackward() {
-        guard !text.isEmpty else { return }
-        text.removeLast()
+        let offset = clampedOffset
+        guard offset > 0 else { return }
+        let index = text.index(text.startIndex, offsetBy: offset - 1)
+        text.remove(at: index)
+        cursorOffset = offset - 1
     }
+
+    func moveCursor(by characterOffset: Int) {
+        cursorOffset = min(max(clampedOffset + characterOffset, 0), text.count)
+    }
+
+    private var clampedOffset: Int { min(max(cursorOffset, 0), text.count) }
 }

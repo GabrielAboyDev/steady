@@ -291,6 +291,7 @@ struct KeyboardSurface: View {
             topScale: controller.topScale,
             isStaticFallback: controller.isStaticFallback,
             colorVision: store.settings.colorVision,
+            highlightNextLetter: store.settings.nextLetterHighlight,
             traits: traits,
             capsLockEnabled: controller.rules.capsLock,
             returnEnabled: returnEnabled,
@@ -298,7 +299,9 @@ struct KeyboardSurface: View {
             isCapsLocked: $isCapsLocked,
             onInsert: insert,
             onDelete: deleteBackward,
-            onReturn: { insert("\n") }
+            onReturn: { insert("\n") },
+            onMoveCursor: moveCursor,
+            onDeleteWord: deleteWordBackward
         )
     }
 
@@ -411,11 +414,25 @@ struct KeyboardSurface: View {
         refresh()
     }
 
+    /// The space-bar trackpad drag. No key click — the stock keyboard's own
+    /// trackpad is silent, and a click per character would be noisy.
+    private func moveCursor(by characterOffset: Int) {
+        composer.moveCursor(by: characterOffset, into: activeSink)
+        refresh()
+    }
+
+    /// One tick of holding the delete key.
+    private func deleteWordBackward() {
+        activeSink.playKeyClick()
+        composer.deleteWordBackward(into: activeSink)
+        refresh()
+    }
+
     /// A name is one tap: it goes in and the keys come back, because the next
     /// thing the user wants is almost always to carry on typing.
     private func insertQuickEntry(_ entry: QuickInsertEntry) {
         activeSink.playKeyClick()
-        composer.insert(entry.text + (entry.appendsSpace ? " " : ""), rules: controller.rules, into: activeSink)
+        composer.insertEntry(entry.text, rules: controller.rules, into: activeSink)
         panel = .keyboard
         refresh()
     }

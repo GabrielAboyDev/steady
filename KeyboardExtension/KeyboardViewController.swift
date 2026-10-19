@@ -150,6 +150,10 @@ final class ProxyTextSink: TextSink {
         proxy?.deleteBackward()
     }
 
+    func moveCursor(by characterOffset: Int) {
+        proxy?.adjustTextPosition(byCharacterOffset: characterOffset)
+    }
+
     /// The system click. Silent when Keyboard Clicks is off in iOS Settings.
     func playKeyClick() {
         UIDevice.current.playInputClick()

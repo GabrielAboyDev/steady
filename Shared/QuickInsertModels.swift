@@ -4,12 +4,10 @@ import Foundation
 /// spell or tedious to type.
 struct QuickInsertEntry: Codable, Equatable, Identifiable {
     var id: UUID = UUID()
-    /// The exact text inserted on tap.
+    /// The exact text inserted on tap. A capital first letter follows the
+    /// sentence's own capitalization when inserted; a deliberate lowercase
+    /// stays put.
     var text: String
-    /// Optional qualifier shown under the text ("sister", "GP").
-    var note: String?
-    /// Append a space after inserting.
-    var appendsSpace: Bool = true
 }
 
 /// A user-managed group of entries ("People", "Places").
@@ -32,14 +30,14 @@ extension QuickInsertCategory {
             entries: [
                 QuickInsertEntry(text: "Mom"),
                 QuickInsertEntry(text: "Dad"),
-                QuickInsertEntry(text: "Sarah", note: "sister"),
+                QuickInsertEntry(text: "Sarah"),
                 QuickInsertEntry(text: "Aunt Rosa"),
             ]),
         QuickInsertCategory(
             name: "Care team",
             entries: [
-                QuickInsertEntry(text: "Dr. Lee", note: "GP"),
-                QuickInsertEntry(text: "Mr. Okafor", note: "carer"),
+                QuickInsertEntry(text: "Dr. Lee"),
+                QuickInsertEntry(text: "Mr. Okafor"),
             ]),
         QuickInsertCategory(
             name: "Places",

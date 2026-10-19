@@ -154,7 +154,7 @@ struct PhraseFillView: View {
                         Button {
                             answer(with: choice.text)
                         } label: {
-                            QuickInsertTile(text: choice.text, note: choice.note)
+                            QuickInsertTile(text: choice.text)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Fill \(slot.name) with \(choice.text)")

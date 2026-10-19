@@ -179,6 +179,12 @@ struct SettingsView: View {
                             detail: "Use the shortcuts from Settings > General > Keyboard > Text Replacement, and know your contacts' names."
                         )
                     }
+                    Toggle(isOn: $store.settings.nextLetterHighlight) {
+                        settingLabel(
+                            "Next letter highlight",
+                            detail: "Ring and bold the single most likely next letter."
+                        )
+                    }
                     Text(
                         "iOS doesn't let a keyboard read Settings > General > Keyboard, so these ask again. A text field that turns one of them off is always obeyed. Keyboard clicks follow the iOS setting on their own."
                     )
@@ -186,25 +192,13 @@ struct SettingsView: View {
                     .foregroundStyle(Theme.textMuted)
                 }
 
-                Section("Sharing") {
-                    HStack {
-                        Text(store.isSharingThroughAppGroup ? "Shared with the keyboard" : "Not shared yet")
-                            .foregroundStyle(store.isSharingThroughAppGroup ? Theme.positive : Theme.caution)
-                        Spacer()
-                        if let lastRun = store.keyboardLastRun {
-                            Text(lastRun, style: .relative)
-                                .font(.system(size: 13))
-                                .foregroundStyle(Theme.textMuted)
-                        }
-                    }
-                    Text(
-                        store.isSharingThroughAppGroup
-                            ? "Settings are stored in the app group, so the keyboard reads them the next time it opens."
-                            : "The app group isn't available in this build, so the keyboard can't read these settings yet."
-                    )
-                    .font(.system(size: 12))
-                    .foregroundStyle(Theme.textSecondary)
+                Section {
+                    Text(Self.versionString)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.textMuted)
+                        .frame(maxWidth: .infinity, alignment: .center)
                 }
+                .listRowBackground(Color.clear)
             }
             .navigationTitle("Settings")
             .onAppear(perform: updatePreview)
@@ -224,6 +218,14 @@ struct SettingsView: View {
     private func updatePreview() {
         previewController.update(settings: store.settings)
         previewController.refresh(context: "th", isSecure: false)
+    }
+
+    /// "Version 1.0 (3)", from the bundle's own marketing and build numbers.
+    private static var versionString: String {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "—"
+        let build = info?["CFBundleVersion"] as? String ?? "—"
+        return "Version \(version) (\(build))"
     }
 }
 

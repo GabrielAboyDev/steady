@@ -174,6 +174,37 @@ final class TextComposer: ObservableObject {
         sink.deleteBackward()
     }
 
+    /// The space-bar trackpad drag. It only ever repositions the caret, so
+    /// there is no word to commit and no correction left to undo with the
+    /// next backspace.
+    func moveCursor(by characterOffset: Int, into sink: TextSink) {
+        lastCorrection = nil
+        lastSpaceAt = nil
+        sink.moveCursor(by: characterOffset)
+    }
+
+    /// Holding delete: removes the run of whitespace right before the
+    /// caret, then the word (or punctuation) behind that — one chunk per
+    /// call, the way the stock keyboard's held delete speeds up to.
+    func deleteWordBackward(into sink: TextSink) {
+        lastSpaceAt = nil
+        lastCorrection = nil
+        guard let context = sink.contextBeforeInput, !context.isEmpty else { return }
+        var remaining = Substring(context)
+        var count = 0
+        while let last = remaining.last, last.isWhitespace {
+            remaining = remaining.dropLast()
+            count += 1
+        }
+        while let last = remaining.last, !last.isWhitespace {
+            remaining = remaining.dropLast()
+            count += 1
+        }
+        for _ in 0..<count {
+            sink.deleteBackward()
+        }
+    }
+
     // MARK: Whole words
 
     /// A suggestion chip. Replaces the `prefixLength` characters already
@@ -197,14 +228,36 @@ final class TextComposer: ObservableObject {
         sink.insertText(text + " ")
     }
 
-    /// A name or a finished phrase. A space goes in front when it lands
-    /// against the end of a word, so "see you" does not become "seeyou".
+    /// A finished phrase. A space goes in front when it lands against the end
+    /// of a word, so "see you" does not become "seeyou".
     func insert(_ text: String, rules: TypingRules, into sink: TextSink) {
         lastCorrection = nil
         lastSpaceAt = nil
         let context = sink.contextBeforeInput ?? ""
         let leading = rules.smartInsertDelete && TextComposer.needsSpace(before: context) ? " " : ""
         sink.insertText(leading + text)
+    }
+
+    /// A saved name or place (US-008): one tap, then a trailing space so
+    /// typing can carry straight on. Text saved with a capital first letter
+    /// follows the sentence's own capitalization instead of always landing
+    /// capitalized — "Mom" stays "Mom" at the start of a sentence but drops
+    /// to "mom" typed mid-sentence after "my ". A deliberately lowercase
+    /// entry, like "home", is never forced capital.
+    func insertEntry(_ text: String, rules: TypingRules, into sink: TextSink) {
+        lastCorrection = nil
+        lastSpaceAt = nil
+        let context = sink.contextBeforeInput ?? ""
+        let leading = rules.smartInsertDelete && TextComposer.needsSpace(before: context) ? " " : ""
+        let cased = TextComposer.recased(text, wantsCapital: rules.wantsCapital(after: context))
+        sink.insertText(leading + cased + " ")
+    }
+
+    /// Only text written with a capital first letter is up for recasing —
+    /// everything else is left exactly as saved.
+    static func recased(_ text: String, wantsCapital: Bool) -> String {
+        guard let first = text.first, first.isUppercase, !wantsCapital else { return text }
+        return text.prefix(1).lowercased() + text.dropFirst()
     }
 
     // MARK: Committing a word

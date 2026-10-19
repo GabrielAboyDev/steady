@@ -61,7 +61,7 @@ struct QuickInsertPanel: View {
                     Button {
                         onInsert(entry)
                     } label: {
-                        QuickInsertTile(text: entry.text, note: entry.note)
+                        QuickInsertTile(text: entry.text)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Insert \(entry.text)")
@@ -90,31 +90,23 @@ struct QuickInsertPanel: View {
 /// flow uses the same one, so a name looks the same wherever it is offered.
 let quickInsertGridColumns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
 
-/// One Names-panel tile: the text, with its note underneath when there is one.
+/// One Names-panel tile: just the text.
 ///
 /// Shared with the phrase fill flow so that choosing a name for a blank looks
 /// exactly like tapping it on the Names panel.
 struct QuickInsertTile: View {
 
     let text: String
-    var note: String? = nil
 
     var body: some View {
-        VStack(spacing: 2) {
-            Text(text)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(Theme.textPrimary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            if let note, !note.isEmpty {
-                Text(note)
-                    .font(.system(size: 12))
-                    .foregroundStyle(Theme.textMuted)
-            }
-        }
-        .frame(maxWidth: .infinity, minHeight: 60)
-        .background(Theme.keyFace)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .shadow(color: .black.opacity(0.14), radius: 0, x: 0, y: 1)
+        Text(text)
+            .font(.system(size: 18, weight: .semibold))
+            .foregroundStyle(Theme.textPrimary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            .frame(maxWidth: .infinity, minHeight: 60)
+            .background(Theme.keyFace)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .shadow(color: .black.opacity(0.14), radius: 0, x: 0, y: 1)
     }
 }

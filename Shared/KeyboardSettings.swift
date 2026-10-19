@@ -177,6 +177,8 @@ struct KeyboardSettings: Codable, Equatable {
     var textReplacement: Bool = true
     /// Offer the spell checker's guesses among the suggestions.
     var spellingSuggestions: Bool = true
+    /// Ring and bold the single most likely next letter.
+    var nextLetterHighlight: Bool = true
 
     static let `default` = KeyboardSettings()
 
@@ -227,5 +229,7 @@ struct KeyboardSettings: Codable, Equatable {
             try container.decodeIfPresent(Bool.self, forKey: .textReplacement) ?? fallback.textReplacement
         spellingSuggestions =
             try container.decodeIfPresent(Bool.self, forKey: .spellingSuggestions) ?? fallback.spellingSuggestions
+        nextLetterHighlight =
+            try container.decodeIfPresent(Bool.self, forKey: .nextLetterHighlight) ?? fallback.nextLetterHighlight
     }
 }

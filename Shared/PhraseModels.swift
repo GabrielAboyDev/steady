@@ -119,12 +119,11 @@ struct PhraseSegment: Identifiable {
     let kind: Kind
 }
 
-/// One tappable answer for a blank: a saved name, with its note, or one of
-/// the slot's own options.
+/// One tappable answer for a blank: a saved name, or one of the slot's own
+/// options.
 struct PhraseChoice: Identifiable, Equatable {
     let id: String
     let text: String
-    let note: String?
 }
 
 /// Walks the user through a phrase's slots one at a time, as the mock's
@@ -132,9 +131,7 @@ struct PhraseChoice: Identifiable, Equatable {
 final class PhraseFillSession: ObservableObject {
 
     let template: PhraseTemplate
-    /// The user's saved names, offered for any slot that draws from them. The
-    /// entries rather than their texts, so the fill view can show the same
-    /// tiles — note and all — as the Names panel.
+    /// The user's saved names, offered for any slot that draws from them.
     private let names: [QuickInsertEntry]
 
     @Published private(set) var values: [String: String] = [:]
@@ -159,10 +156,10 @@ final class PhraseFillSession: ObservableObject {
     var currentChoices: [PhraseChoice] {
         guard let slot = currentSlot else { return [] }
         if slot.drawsFromNames || (slot.options.isEmpty && !slot.allowsFreeText) {
-            return names.map { PhraseChoice(id: $0.id.uuidString, text: $0.text, note: $0.note) }
+            return names.map { PhraseChoice(id: $0.id.uuidString, text: $0.text) }
         }
         return slot.options.enumerated().map { option in
-            PhraseChoice(id: "option-\(option.offset)", text: option.element, note: nil)
+            PhraseChoice(id: "option-\(option.offset)", text: option.element)
         }
     }
 

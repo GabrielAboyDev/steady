@@ -16,14 +16,7 @@ struct NamesEditorView: View {
                             NavigationLink {
                                 EntryEditor(entry: $entry)
                             } label: {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(entry.text).font(.system(size: 16, weight: .medium))
-                                    if let note = entry.note, !note.isEmpty {
-                                        Text(note)
-                                            .font(.system(size: 12))
-                                            .foregroundStyle(Theme.textMuted)
-                                    }
-                                }
+                                Text(entry.text).font(.system(size: 16, weight: .medium))
                             }
                         }
                         .onDelete { offsets in
@@ -78,18 +71,6 @@ private struct EntryEditor: View {
         Form {
             Section("Inserted text") {
                 TextField("Text", text: $entry.text)
-            }
-            Section("Note") {
-                TextField(
-                    "e.g. sister",
-                    text: Binding(
-                        get: { entry.note ?? "" },
-                        set: { entry.note = $0.isEmpty ? nil : $0 }
-                    )
-                )
-            }
-            Section {
-                Toggle("Add a space after inserting", isOn: $entry.appendsSpace)
             }
         }
         .navigationTitle(entry.text.isEmpty ? "Entry" : entry.text)

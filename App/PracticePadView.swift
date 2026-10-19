@@ -38,19 +38,39 @@ struct PracticePadView: View {
                 .font(.system(size: 14))
                 .foregroundStyle(Theme.textSecondary)
 
-            HStack(alignment: .bottom, spacing: 1) {
-                Text(buffer.text.isEmpty ? "Start typing…" : buffer.text)
-                    .font(.system(size: 19))
-                    .foregroundStyle(buffer.text.isEmpty ? Theme.textMuted : Theme.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("practicePadText")
-                if !buffer.text.isEmpty {
+            HStack(alignment: .bottom, spacing: 0) {
+                if buffer.text.isEmpty {
+                    Text("Start typing…")
+                        .font(.system(size: 19))
+                        .foregroundStyle(Theme.textMuted)
+                } else {
+                    // Split on the real caret — not just appended at the end
+                    // — so the space bar's press-and-drag trackpad has
+                    // somewhere visible to move it to.
+                    let offset = min(max(buffer.cursorOffset, 0), buffer.text.count)
+                    let splitIndex = buffer.text.index(buffer.text.startIndex, offsetBy: offset)
+                    Text(buffer.text[..<splitIndex])
+                        .font(.system(size: 19))
+                        .foregroundStyle(Theme.textPrimary)
                     Rectangle()
                         .fill(Theme.brand)
                         .frame(width: 2, height: 21)
+                    Text(buffer.text[splitIndex...])
+                        .font(.system(size: 19))
+                        .foregroundStyle(Theme.textPrimary)
                 }
                 Spacer(minLength: 0)
             }
+            .fixedSize(horizontal: false, vertical: true)
+            // One static-text element with the plain, caret-free string —
+            // matching what a single `Text` exposed before this view split
+            // into two (one each side of the caret) — rather than the three
+            // children (before, caret, after) SwiftUI would otherwise hand
+            // VoiceOver and the UI tests that key off this identifier.
+            .accessibilityElement(children: .ignore)
+            .accessibilityAddTraits(.isStaticText)
+            .accessibilityLabel(buffer.text.isEmpty ? "Start typing…" : buffer.text)
+            .accessibilityIdentifier("practicePadText")
             .padding(14)
             .frame(maxWidth: .infinity, minHeight: 92, alignment: .topLeading)
             .background(Theme.surfaceRaised)
