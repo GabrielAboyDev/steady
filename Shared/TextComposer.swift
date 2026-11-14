@@ -223,8 +223,9 @@ final class TextComposer: ObservableObject {
         }
         let context = sink.contextBeforeInput ?? ""
         let cased = capitalization.apply(to: word)
-        let text = prefixLength == 0 && rules.smartInsertDelete && TextComposer.needsSpace(before: context)
-            ? " " + cased : cased
+        let needsLeadingSpace =
+            prefixLength == 0 && rules.smartInsertDelete && TextComposer.needsSpace(before: context)
+        let text = needsLeadingSpace ? " " + cased : cased
         sink.insertText(text + " ")
     }
 

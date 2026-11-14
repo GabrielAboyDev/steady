@@ -33,6 +33,17 @@ struct DynamicKeyboardView: View {
     /// Whether the return key can be tapped (a field can ask for it to stay
     /// dead while it is empty).
     var returnEnabled = true
+    /// When set, draws the return key as this SF Symbol instead of
+    /// `traits.returnKeyLabel` — the Practice tool's text-to-speech toggle
+    /// uses this to turn Return into a play/pause control.
+    var returnKeySymbolOverride: String? = nil
+    /// The accessibility label to pair with `returnKeySymbolOverride`.
+    var returnKeyAccessibilityLabel: String? = nil
+    /// Explore-and-submit input: one finger hovers a key and hears its name,
+    /// a tap on the Submit key types it.
+    var blindMode = false
+    /// Speaks a key name in blind mode.
+    var onSpeak: (String) -> Void = { _ in }
 
     /// Owned by the surface: autocapitalization sets it after every key, and
     /// the shift key overrides it until the next letter.
@@ -64,6 +75,8 @@ struct DynamicKeyboardView: View {
     /// Set the first time that timer fires, so lifting the touch afterward
     /// doesn't also fire the single-character tap.
     @State private var didDeleteWordOnHold = false
+    /// The key under the exploring finger in blind mode.
+    @State private var hoveredKey: KeyID?
 
     init(
         keyScales: [Character: KeyScale],
@@ -74,6 +87,10 @@ struct DynamicKeyboardView: View {
         traits: InputTraits = .standard,
         capsLockEnabled: Bool = true,
         returnEnabled: Bool = true,
+        returnKeySymbolOverride: String? = nil,
+        returnKeyAccessibilityLabel: String? = nil,
+        blindMode: Bool = false,
+        onSpeak: @escaping (String) -> Void = { _ in },
         isShifted: Binding<Bool>,
         isCapsLocked: Binding<Bool>,
         onInsert: @escaping (String) -> Void,
@@ -90,6 +107,10 @@ struct DynamicKeyboardView: View {
         self.traits = traits
         self.capsLockEnabled = capsLockEnabled
         self.returnEnabled = returnEnabled
+        self.returnKeySymbolOverride = returnKeySymbolOverride
+        self.returnKeyAccessibilityLabel = returnKeyAccessibilityLabel
+        self.blindMode = blindMode
+        self.onSpeak = onSpeak
         _isShifted = isShifted
         _isCapsLocked = isCapsLocked
         self.onInsert = onInsert
@@ -139,6 +160,87 @@ struct DynamicKeyboardView: View {
         .onChange(of: traits.opensOnNumbers) { opensOnNumbers in
             plane = opensOnNumbers ? .numbers : .letters
         }
+        .overlayPreferenceValue(KeyFramesPreferenceKey.self) { anchors in
+            if blindMode {
+                GeometryReader { proxy in
+                    BlindModeTouchOverlay(
+                        frames: anchors.mapValues { proxy[$0] },
+                        onHover: { id in
+                            hoveredKey = id
+                            if let id { onSpeak(id.spokenName(in: spokenContext)) }
+                        },
+                        onSubmitHovered: { onSpeak("submit") },
+                        onSubmit: {
+                            guard let id = hoveredKey else {
+                                onSpeak("nothing selected")
+                                return
+                            }
+                            commit(id)
+                        }
+                    )
+                }
+            }
+        }
+        .onChange(of: blindMode) { isOn in
+            if !isOn { hoveredKey = nil }
+        }
+    }
+
+    // MARK: Blind mode
+
+    private var spokenContext: SpokenNameContext {
+        SpokenNameContext(
+            plane: plane, isShifted: isShifted, isCapsLocked: isCapsLocked, returnLabel: returnLabel)
+    }
+
+    private var returnLabel: String {
+        returnKeyAccessibilityLabel ?? traits.returnKeyLabel
+    }
+
+    /// Does what tapping `key` does, then says what happened.
+    private func commit(_ key: KeyID) {
+        switch key {
+        case .character(let character): tapCharacter(character)
+        case .space: onInsert(" ")
+        case .delete: onDelete()
+        case .returnKey:
+            guard returnEnabled else {
+                onSpeak("\(returnLabel) is off")
+                return
+            }
+            onReturn()
+        case .shift: tapShift()
+        case .planeToggle: togglePrimaryPlane()
+        case .secondaryPlaneToggle: toggleSecondaryPlane()
+        case .extra(let text): onInsert(text)
+        case .submit: return
+        }
+        onSpeak(confirmation(for: key))
+    }
+
+    /// Toggles report the state they switched to, not the key's name.
+    private func confirmation(for key: KeyID) -> String {
+        switch key {
+        case .shift:
+            if isCapsLocked { return "caps lock on" }
+            return isShifted ? "shift on" : "shift off"
+        case .planeToggle, .secondaryPlaneToggle:
+            switch plane {
+            case .letters: return "letters"
+            case .numbers: return "numbers"
+            case .symbols: return "symbols"
+            }
+        default:
+            return key.spokenName(in: spokenContext)
+        }
+    }
+
+    /// Ring around the hovered key, so a sighted helper can follow along.
+    private func hoverRing(_ id: KeyID?, inset: CGFloat = 0) -> some View {
+        RoundedRectangle(cornerRadius: 6)
+            .strokeBorder(palette.accent, lineWidth: 3)
+            .padding(.horizontal, inset)
+            .opacity(id != nil && hoveredKey == id ? 1 : 0)
     }
 
     // MARK: Letter rows
@@ -158,6 +260,8 @@ struct DynamicKeyboardView: View {
                     } else {
                         keyCap(for: key, metrics: metrics)
                             .frame(width: widths[index], height: baseKeyHeight * metrics.heightFactor)
+                            .overlay(hoverRing(.character(key), inset: keySpacing / 2))
+                            .reportsKeyFrame(.character(key))
                             .opacity(metrics.opacity)
                     }
                 }
@@ -228,16 +332,14 @@ struct DynamicKeyboardView: View {
         // palette (from the environment) decides whether they apply or the
         // dark ramp does. See `KeyboardPalette.face(for:vision:)`.
         let vision = colorVision.keyPalette
-        let isEmphasized = metrics.tier.isEmphasized && highlightNextLetter
+        let tier = metrics.tier.effective(highlightNextLetter: highlightNextLetter)
+        let isEmphasized = tier.isEmphasized
         return Button {
-            onInsert(label)
-            // One capital, then back down — unless locked. The surface then
-            // re-reads autocapitalization for the next letter.
-            if isShifted, !isCapsLocked { isShifted = false }
+            tapCharacter(key)
         } label: {
             ZStack {
                 RoundedRectangle(cornerRadius: 6)
-                    .fill(palette.face(for: metrics.tier, vision: vision))
+                    .fill(palette.face(for: tier, vision: vision))
                     .overlay(
                         RoundedRectangle(cornerRadius: 6)
                             .strokeBorder(
@@ -252,7 +354,7 @@ struct DynamicKeyboardView: View {
                         .system(
                             size: fontSize(for: metrics), weight: isEmphasized ? .bold : .medium)
                     )
-                    .foregroundStyle(palette.label(for: metrics.tier, vision: vision))
+                    .foregroundStyle(palette.label(for: tier, vision: vision))
                     .minimumScaleFactor(0.6)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -265,6 +367,14 @@ struct DynamicKeyboardView: View {
         .accessibilityLabel(Text(label))
     }
 
+    private func tapCharacter(_ key: Character) {
+        let label = isShifted && plane == .letters ? String(key).uppercased() : String(key)
+        onInsert(label)
+        // One capital, then back down — unless locked. The surface then
+        // re-reads autocapitalization for the next letter.
+        if isShifted, !isCapsLocked { isShifted = false }
+    }
+
     private func fontSize(for metrics: KeyMetrics) -> CGFloat {
         let base: CGFloat = 19
         return min(max(base * metrics.heightFactor, 11), 31)
@@ -273,45 +383,100 @@ struct DynamicKeyboardView: View {
     // MARK: Bottom row
 
     private var bottomRow: some View {
-        HStack(spacing: keySpacing) {
-            utilityKey(planeToggleLabel, width: 46) {
-                plane = plane == .letters ? .numbers : .letters
-            }
-
-            if plane == .letters {
-                utilityKey(
-                    shiftSymbol, width: 42, isActive: isShifted || isCapsLocked, isSymbol: true,
-                    action: tapShift
-                )
-                .accessibilityLabel(isCapsLocked ? "Caps lock on" : isShifted ? "Shift on" : "Shift")
+        Group {
+            if blindMode {
+                blindBottomRow
             } else {
-                utilityKey(plane == .numbers ? "#+=" : "123", width: 46) {
-                    plane = plane == .numbers ? .symbols : .numbers
-                }
+                standardBottomRow
             }
+        }
+        .frame(height: baseKeyHeight)
+    }
+
+    private var standardBottomRow: some View {
+        HStack(spacing: keySpacing) {
+            planeToggleKey
+            shiftOrSecondaryPlaneKey
 
             // An address field gets its certain characters as keys of their
             // own, the way the stock keyboard does, and the space bar gives
             // up the room.
             ForEach(traits.extraBottomKeys, id: \.self) { key in
-                utilityKey(key, width: 36) { onInsert(key) }
+                utilityKey(key, width: 36, id: .extra(key)) { onInsert(key) }
             }
 
             spaceKey
 
             deleteKey
 
-            // The field's own return key: "search", "send", "go"… An action
-            // key takes the accent, as the stock keyboard's does.
-            utilityKey(
-                traits.returnKeyLabel, width: 66, isActive: traits.returnKeyIsAction && returnEnabled,
-                action: onReturn
-            )
-            .disabled(!returnEnabled)
-            .opacity(returnEnabled ? 1 : 0.4)
-            .accessibilityLabel(traits.returnKeyLabel.capitalized)
+            returnKey(width: 66)
         }
-        .frame(height: baseKeyHeight)
+    }
+
+    /// Space is one more key to hover rather than a bar; delete and return
+    /// take the room it gives up, and Submit — the only key tapped directly
+    /// — sits at the right edge where a finger can find it by feel. The
+    /// field's extra keys are left out: their characters are on the numbers
+    /// plane, and there is no room for them here.
+    private var blindBottomRow: some View {
+        HStack(spacing: keySpacing) {
+            planeToggleKey
+            shiftOrSecondaryPlaneKey
+
+            // Plain keys: everything is hover-and-submit, so the trackpad
+            // and hold-to-delete gestures have nothing to do.
+            utilityKey("space", width: 46, id: .space, face: palette.keyFace) { onInsert(" ") }
+            utilityKey("⌫", width: nil, id: .delete) { onDelete() }
+
+            returnKey(width: nil)
+
+            utilityKey("Submit", width: 76, isActive: true, id: .submit) {}
+        }
+    }
+
+    private var planeToggleKey: some View {
+        utilityKey(planeToggleLabel, width: 46, id: .planeToggle, action: togglePrimaryPlane)
+    }
+
+    @ViewBuilder
+    private var shiftOrSecondaryPlaneKey: some View {
+        if plane == .letters {
+            utilityKey(
+                shiftSymbol, width: 42, isActive: isShifted || isCapsLocked, isSymbol: true,
+                id: .shift, action: tapShift
+            )
+            .accessibilityLabel(isCapsLocked ? "Caps lock on" : isShifted ? "Shift on" : "Shift")
+        } else {
+            utilityKey(
+                plane == .numbers ? "#+=" : "123", width: 46, id: .secondaryPlaneToggle,
+                action: toggleSecondaryPlane
+            )
+        }
+    }
+
+    /// The field's own return key: "search", "send", "go"… An action key
+    /// takes the accent, as the stock keyboard's does. When the Practice
+    /// tool's text-to-speech toggle is on, this becomes a play/pause control
+    /// instead. `nil` width fills whatever the row has left.
+    private func returnKey(width: CGFloat?) -> some View {
+        utilityKey(
+            returnKeySymbolOverride ?? traits.returnKeyLabel, width: width,
+            isActive: traits.returnKeyIsAction && returnEnabled,
+            isSymbol: returnKeySymbolOverride != nil,
+            id: .returnKey,
+            action: onReturn
+        )
+        .disabled(!returnEnabled)
+        .opacity(returnEnabled ? 1 : 0.4)
+        .accessibilityLabel(returnKeyAccessibilityLabel ?? traits.returnKeyLabel.capitalized)
+    }
+
+    private func togglePrimaryPlane() {
+        plane = plane == .letters ? .numbers : .letters
+    }
+
+    private func toggleSecondaryPlane() {
+        plane = plane == .numbers ? .symbols : .numbers
     }
 
     /// How far a drag has to travel, in points, before it counts as one
@@ -438,12 +603,16 @@ struct DynamicKeyboardView: View {
         plane == .letters ? "123" : "ABC"
     }
 
-    /// `isSymbol` draws `label` as an SF Symbol instead of text.
+    /// `isSymbol` draws `label` as an SF Symbol instead of text. A `nil`
+    /// width stretches to fill the row; `id` makes the key a blind-mode
+    /// hover target.
     private func utilityKey(
         _ label: String,
-        width: CGFloat,
+        width: CGFloat?,
         isActive: Bool = false,
         isSymbol: Bool = false,
+        id: KeyID? = nil,
+        face: Color? = nil,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
@@ -458,10 +627,13 @@ struct DynamicKeyboardView: View {
             .minimumScaleFactor(0.7)
             .foregroundStyle(isActive ? .white : palette.keyLabel)
             .frame(width: width, height: baseKeyHeight)
-            .background(isActive ? palette.accent : palette.keyUtility)
+            .frame(maxWidth: width == nil ? .infinity : nil)
+            .background(isActive ? palette.accent : (face ?? palette.keyUtility))
             .clipShape(RoundedRectangle(cornerRadius: 6))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(label))
+        .overlay(hoverRing(id))
+        .reportsKeyFrame(id)
     }
 }

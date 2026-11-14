@@ -18,6 +18,8 @@
 		1C0000000000000000000006 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000006 /* SettingsView.swift */; };
 		1C0000000000000000000007 /* NamesEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000007 /* NamesEditorView.swift */; };
 		1C0000000000000000000008 /* PhrasesEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000008 /* PhrasesEditorView.swift */; };
+		1C0000000000000000000080 /* SpeechReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000080 /* SpeechReader.swift */; };
+		1C0000000000000000000081 /* VoicePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000081 /* VoicePickerView.swift */; };
 		1C0000000000000000000009 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B000000000000000000000A /* AppGroup.swift */; };
 		1C000000000000000000000A /* KeyboardSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B000000000000000000000B /* KeyboardSettings.swift */; };
 		1C000000000000000000000B /* QuickInsertModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B000000000000000000000C /* QuickInsertModels.swift */; };
@@ -35,6 +37,8 @@
 		1C0000000000000000000013 /* QuickInsertPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000014 /* QuickInsertPanel.swift */; };
 		1C0000000000000000000014 /* PhrasePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000015 /* PhrasePanel.swift */; };
 		1C0000000000000000000015 /* KeyboardSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000016 /* KeyboardSurface.swift */; };
+		1C0000000000000000000090 /* KeySpeaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000090 /* KeySpeaker.swift */; };
+		1C0000000000000000000091 /* BlindModeOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000091 /* BlindModeOverlay.swift */; };
 		1D0000000000000000000016 /* KeyboardViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000017 /* KeyboardViewController.swift */; };
 		1D0000000000000000000017 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B000000000000000000000A /* AppGroup.swift */; };
 		1D0000000000000000000018 /* KeyboardSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B000000000000000000000B /* KeyboardSettings.swift */; };
@@ -49,6 +53,8 @@
 		1D0000000000000000000021 /* QuickInsertPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000014 /* QuickInsertPanel.swift */; };
 		1D0000000000000000000022 /* PhrasePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000015 /* PhrasePanel.swift */; };
 		1D0000000000000000000023 /* KeyboardSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000016 /* KeyboardSurface.swift */; };
+		1D0000000000000000000090 /* KeySpeaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000090 /* KeySpeaker.swift */; };
+		1D0000000000000000000091 /* BlindModeOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000091 /* BlindModeOverlay.swift */; };
 		1E0000000000000000000024 /* SteadyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B000000000000000000001A /* SteadyUITests.swift */; };
 		1E0000000000000000000025 /* ExtensionInHostAppTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B000000000000000000001B /* ExtensionInHostAppTest.swift */; };
 		1E0000000000000000000026 /* StoreCaptureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B000000000000000000001C /* StoreCaptureTests.swift */; };
@@ -101,6 +107,8 @@
 		1B0000000000000000000006 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		1B0000000000000000000007 /* NamesEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NamesEditorView.swift; sourceTree = "<group>"; };
 		1B0000000000000000000008 /* PhrasesEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhrasesEditorView.swift; sourceTree = "<group>"; };
+		1B0000000000000000000080 /* SpeechReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechReader.swift; sourceTree = "<group>"; };
+		1B0000000000000000000081 /* VoicePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoicePickerView.swift; sourceTree = "<group>"; };
 		1B0000000000000000000009 /* Steady.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Steady.entitlements; sourceTree = "<group>"; };
 		1B000000000000000000000A /* AppGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroup.swift; sourceTree = "<group>"; };
 		1B000000000000000000000B /* KeyboardSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardSettings.swift; sourceTree = "<group>"; };
@@ -117,6 +125,8 @@
 		1B0000000000000000000014 /* QuickInsertPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickInsertPanel.swift; sourceTree = "<group>"; };
 		1B0000000000000000000015 /* PhrasePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhrasePanel.swift; sourceTree = "<group>"; };
 		1B0000000000000000000016 /* KeyboardSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardSurface.swift; sourceTree = "<group>"; };
+		1B0000000000000000000090 /* KeySpeaker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeySpeaker.swift; sourceTree = "<group>"; };
+		1B0000000000000000000091 /* BlindModeOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlindModeOverlay.swift; sourceTree = "<group>"; };
 		1B0000000000000000000017 /* KeyboardViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardViewController.swift; sourceTree = "<group>"; };
 		1B0000000000000000000018 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1B0000000000000000000019 /* SteadyKeyboard.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SteadyKeyboard.entitlements; sourceTree = "<group>"; };
@@ -188,6 +198,8 @@
 				1B0000000000000000000006 /* SettingsView.swift */,
 				1B0000000000000000000007 /* NamesEditorView.swift */,
 				1B0000000000000000000008 /* PhrasesEditorView.swift */,
+				1B0000000000000000000080 /* SpeechReader.swift */,
+				1B0000000000000000000081 /* VoicePickerView.swift */,
 				1B0000000000000000000009 /* Steady.entitlements */,
 				1B0000000000000000000030 /* Assets.xcassets */,
 				1B0000000000000000000031 /* PrivacyInfo.xcprivacy */,
@@ -224,6 +236,8 @@
 				1B0000000000000000000014 /* QuickInsertPanel.swift */,
 				1B0000000000000000000015 /* PhrasePanel.swift */,
 				1B0000000000000000000016 /* KeyboardSurface.swift */,
+				1B0000000000000000000090 /* KeySpeaker.swift */,
+				1B0000000000000000000091 /* BlindModeOverlay.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -387,6 +401,8 @@
 				1C0000000000000000000006 /* SettingsView.swift in Sources */,
 				1C0000000000000000000007 /* NamesEditorView.swift in Sources */,
 				1C0000000000000000000008 /* PhrasesEditorView.swift in Sources */,
+				1C0000000000000000000080 /* SpeechReader.swift in Sources */,
+				1C0000000000000000000081 /* VoicePickerView.swift in Sources */,
 				1C0000000000000000000009 /* AppGroup.swift in Sources */,
 				1C000000000000000000000A /* KeyboardSettings.swift in Sources */,
 				1C000000000000000000000B /* QuickInsertModels.swift in Sources */,
@@ -402,6 +418,8 @@
 				1C0000000000000000000013 /* QuickInsertPanel.swift in Sources */,
 				1C0000000000000000000014 /* PhrasePanel.swift in Sources */,
 				1C0000000000000000000015 /* KeyboardSurface.swift in Sources */,
+				1C0000000000000000000090 /* KeySpeaker.swift in Sources */,
+				1C0000000000000000000091 /* BlindModeOverlay.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -425,6 +443,8 @@
 				1D0000000000000000000021 /* QuickInsertPanel.swift in Sources */,
 				1D0000000000000000000022 /* PhrasePanel.swift in Sources */,
 				1D0000000000000000000023 /* KeyboardSurface.swift in Sources */,
+				1D0000000000000000000090 /* KeySpeaker.swift in Sources */,
+				1D0000000000000000000091 /* BlindModeOverlay.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

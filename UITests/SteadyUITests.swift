@@ -152,6 +152,29 @@ final class SteadyUITests: XCTestCase {
         XCTAssertTrue(app.buttons["z"].exists)
     }
 
+    // Blind mode: a finger sliding over the keys only selects. Nothing is
+    // typed until Submit is tapped while a key is under the other finger.
+    func testBlindModeDragSelectsWithoutTyping() {
+        app.tabBars.buttons["Settings"].tap()
+        // The form only builds the rows on screen; the toggle is below the fold.
+        let toggle = app.descendants(matching: .any).matching(identifier: "blind-mode").firstMatch
+        for _ in 0..<6 where !toggle.exists { app.swipeUp() }
+        XCTAssertTrue(toggle.waitForExistence(timeout: 2), "the Blind mode toggle should be in Settings")
+        // The row's centre is its label; the switch itself sits at the right edge.
+        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+
+        app.tabBars.buttons["Practice"].tap()
+        XCTAssertTrue(app.buttons["Submit"].waitForExistence(timeout: 5), "blind mode adds a Submit key")
+
+        let centre = CGVector(dx: 0.5, dy: 0.5)
+        app.buttons["q"].coordinate(withNormalizedOffset: centre)
+            .press(forDuration: 0.3, thenDragTo: app.buttons["p"].coordinate(withNormalizedOffset: centre))
+        XCTAssertEqual(padText, "Start typing…", "exploring the keys must not type")
+
+        app.buttons["Submit"].tap()
+        XCTAssertEqual(padText, "Start typing…", "Submit with nothing selected must not type")
+    }
+
     // US-007: the practice pad echoes what was typed. The first letter is a
     // capital: the pad is a sentence field, and shift is up when it starts.
     func testPracticePadShowsTypedText() {

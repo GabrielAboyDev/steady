@@ -5,7 +5,7 @@ import SwiftUI
 struct NamesEditorView: View {
 
     @EnvironmentObject private var store: SharedStore
-    @State private var newCategoryName = ""
+    @State private var isPresentingCreateName = false
 
     var body: some View {
         NavigationStack {
@@ -22,12 +22,6 @@ struct NamesEditorView: View {
                         .onDelete { offsets in
                             $category.wrappedValue.entries.remove(atOffsets: offsets)
                         }
-
-                        Button {
-                            $category.wrappedValue.entries.append(QuickInsertEntry(text: "New name"))
-                        } label: {
-                            Label("Add name", systemImage: "plus.circle.fill")
-                        }
                     } header: {
                         HStack {
                             TextField("Category", text: $category.name)
@@ -42,23 +36,106 @@ struct NamesEditorView: View {
                         }
                     }
                 }
+            }
+            .navigationTitle("Names")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        isPresentingCreateName = true
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                    }
+                    .accessibilityLabel("Add name")
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    EditButton()
+                }
+            }
+            .sheet(isPresented: $isPresentingCreateName) {
+                CreateNameSheet(store: store)
+            }
+        }
+    }
+}
 
-                Section("New category") {
-                    HStack {
-                        TextField("e.g. Neighbours", text: $newCategoryName)
-                        Button("Add") {
-                            let name = newCategoryName.trimmingCharacters(in: .whitespaces)
-                            guard !name.isEmpty else { return }
-                            store.categories.append(QuickInsertCategory(name: name, entries: []))
-                            newCategoryName = ""
+/// Create a new quick-insert entry, placing it in an existing category or a
+/// brand-new one typed on the spot.
+private struct CreateNameSheet: View {
+
+    @ObservedObject var store: SharedStore
+    @Environment(\.dismiss) private var dismiss
+
+    private enum CategoryChoice: Hashable {
+        case existing(QuickInsertCategory.ID)
+        case new
+    }
+
+    @State private var nameText = ""
+    @State private var categoryChoice: CategoryChoice?
+    @State private var newCategoryName = ""
+    @FocusState private var isNameFieldFocused: Bool
+
+    private var trimmedName: String { nameText.trimmingCharacters(in: .whitespaces) }
+    private var trimmedNewCategoryName: String { newCategoryName.trimmingCharacters(in: .whitespaces) }
+
+    private var canSave: Bool {
+        guard !trimmedName.isEmpty else { return false }
+        switch categoryChoice {
+        case .existing: return true
+        case .new: return !trimmedNewCategoryName.isEmpty
+        case nil: return false
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Name") {
+                    TextField("e.g. Sarah", text: $nameText)
+                        .focused($isNameFieldFocused)
+                }
+
+                Section("Category") {
+                    Picker("Category", selection: $categoryChoice) {
+                        Text("Choose a category").tag(CategoryChoice?.none)
+                        ForEach(store.categories) { category in
+                            Text(category.name).tag(CategoryChoice?.some(.existing(category.id)))
                         }
-                        .disabled(newCategoryName.trimmingCharacters(in: .whitespaces).isEmpty)
+                        Text("New category…").tag(CategoryChoice?.some(.new))
+                    }
+
+                    if categoryChoice == .new {
+                        TextField("e.g. Neighbours", text: $newCategoryName)
                     }
                 }
             }
-            .navigationTitle("Names")
-            .toolbar { EditButton() }
+            .navigationTitle("Add Name")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { save() }
+                        .disabled(!canSave)
+                }
+            }
+            .onAppear { isNameFieldFocused = true }
         }
+    }
+
+    private func save() {
+        let entry = QuickInsertEntry(text: trimmedName)
+        switch categoryChoice {
+        case .existing(let id):
+            guard let index = store.categories.firstIndex(where: { $0.id == id }) else { return }
+            store.categories[index].entries.append(entry)
+        case .new:
+            guard !trimmedNewCategoryName.isEmpty else { return }
+            store.categories.append(QuickInsertCategory(name: trimmedNewCategoryName, entries: [entry]))
+        case nil:
+            return
+        }
+        dismiss()
     }
 }
 

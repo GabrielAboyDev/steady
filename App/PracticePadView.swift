@@ -10,17 +10,37 @@ struct PracticePadView: View {
     @StateObject private var buffer = BufferTextSink()
     @StateObject private var controller = PredictionController()
     @StateObject private var composer = TextComposer()
+    @StateObject private var reader = SpeechReader()
+    /// Turns the return key into a play/pause control for reading the pad's
+    /// text aloud. Local to this screen, not a persisted preference.
+    @State private var ttsEnabled = false
+    /// How much of a press-and-hold-drag's cumulative translation has already
+    /// been turned into a word scrub, mirroring the space bar trackpad's own
+    /// bookkeeping in `DynamicKeyboardView`.
+    @State private var scrubConsumed: CGFloat = 0
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 pad
                 Spacer(minLength: 0)
-                KeyboardSurface(store: store, controller: controller, composer: composer, sink: buffer)
+                KeyboardSurface(
+                    store: store, controller: controller, composer: composer, sink: buffer,
+                    returnKeyOverride: ttsEnabled ? returnKeyOverride : nil
+                )
             }
             .background(Theme.surfaceBase)
             .navigationTitle("Practice")
             .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        ttsEnabled.toggle()
+                        if !ttsEnabled { reader.stop() }
+                    } label: {
+                        Image(systemName: ttsEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                    }
+                    .accessibilityLabel(ttsEnabled ? "Text to speech on" : "Text to speech off")
+                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Clear") {
                         buffer.text = ""
@@ -28,6 +48,31 @@ struct PracticePadView: View {
                     }
                     .disabled(buffer.text.isEmpty)
                 }
+            }
+        }
+        // Editing mid-read would desync the highlight from what's actually
+        // being spoken, so any change to the text stops playback outright.
+        .onChange(of: buffer.text) { _ in reader.stop() }
+    }
+
+    /// What the return key does and shows while text-to-speech is on, built
+    /// from the reader's current state.
+    private var returnKeyOverride: ReturnKeyOverride {
+        switch reader.state {
+        case .idle:
+            return ReturnKeyOverride(
+                symbol: "play.fill", accessibilityLabel: "Read aloud",
+                isEnabled: !buffer.text.isEmpty
+            ) {
+                reader.start(text: buffer.text, voiceIdentifier: store.settings.ttsVoiceIdentifier)
+            }
+        case .reading:
+            return ReturnKeyOverride(symbol: "pause.fill", accessibilityLabel: "Pause") {
+                reader.pause()
+            }
+        case .paused:
+            return ReturnKeyOverride(symbol: "play.fill", accessibilityLabel: "Resume") {
+                reader.resume()
             }
         }
     }
@@ -43,6 +88,11 @@ struct PracticePadView: View {
                     Text("Start typing…")
                         .font(.system(size: 19))
                         .foregroundStyle(Theme.textMuted)
+                } else if reader.state != .idle {
+                    // Reading: the caret gives way to a highlight over
+                    // whichever word is being spoken right now.
+                    Text(highlightedText)
+                        .font(.system(size: 19))
                 } else {
                     // Split on the real caret — not just appended at the end
                     // — so the space bar's press-and-drag trackpad has
@@ -79,6 +129,9 @@ struct PracticePadView: View {
                 RoundedRectangle(cornerRadius: Theme.cardRadius)
                     .strokeBorder(Theme.ruleHairline, lineWidth: 1)
             )
+            // Press and hold the word being read, then drag, to rewind or
+            // skip ahead — a no-op whenever nothing is currently playing.
+            .gesture(scrubGesture)
 
             if !controller.isEngineAvailable {
                 Text("The bundled word list didn't load, so the keys won't resize.")
@@ -87,5 +140,41 @@ struct PracticePadView: View {
             }
         }
         .padding(16)
+    }
+
+    /// `buffer.text`, with the word `reader` is currently speaking picked out.
+    private var highlightedText: AttributedString {
+        var attributed = AttributedString(buffer.text)
+        if let wordRange = reader.currentWordRange,
+            let attributedRange = Range(wordRange, in: attributed)
+        {
+            attributed[attributedRange].foregroundColor = .white
+            attributed[attributedRange].backgroundColor = Theme.brand
+        }
+        return attributed
+    }
+
+    /// How far a drag has to travel, in points, before it counts as one word
+    /// stepped through — the same technique as the space bar's trackpad in
+    /// `DynamicKeyboardView`, just measured in words instead of characters.
+    private let scrubStep: CGFloat = 24
+
+    /// Press and hold the currently-highlighted word, then drag horizontally
+    /// to scrub playback backward or forward by whole words.
+    private var scrubGesture: some Gesture {
+        LongPressGesture(minimumDuration: 0.3)
+            .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .local))
+            .onChanged { value in
+                guard reader.state != .idle, case .second(true, let drag?) = value else { return }
+                let unconsumed = drag.translation.width - scrubConsumed
+                let steps = Int(unconsumed / scrubStep)
+                guard steps != 0 else { return }
+                reader.seek(
+                    toWordIndex: (reader.currentWordIndex ?? 0) + steps,
+                    voiceIdentifier: store.settings.ttsVoiceIdentifier
+                )
+                scrubConsumed += CGFloat(steps) * scrubStep
+            }
+            .onEnded { _ in scrubConsumed = 0 }
     }
 }

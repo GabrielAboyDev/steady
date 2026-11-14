@@ -56,9 +56,9 @@ final class KeyboardViewController: UIInputViewController {
         // overrides the trait collection the surface derives `\.colorScheme`
         // from, which makes the Dark and Match-system settings impossible.
         //
-        // The panels that must stay light pin themselves instead, through
-        // `LightPanel` in `KeyboardSurface`, which is scoped to those two
-        // subtrees rather than the whole keyboard.
+        // The Names and Phrases panels follow the same palette as the keys,
+        // via `\.keyboardPalette` in `KeyboardSurface` — there is no separate
+        // pin for them any more.
         installSurface()
     }
 

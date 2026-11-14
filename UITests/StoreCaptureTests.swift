@@ -168,7 +168,8 @@ final class StoreCaptureTests: XCTestCase {
         }
         if failing {
             XCTAssertEqual(
-                padText.lowercased(), expected.lowercased(), "the pad did not end up with the text the shot needs")
+                padText.lowercased(), expected.lowercased(),
+                "the pad did not end up with the text the shot needs")
         }
     }
 

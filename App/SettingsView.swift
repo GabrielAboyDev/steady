@@ -1,3 +1,4 @@
+import AVFoundation
 import PredictiveEngine
 import SwiftUI
 
@@ -28,7 +29,8 @@ struct SettingsView: View {
                         ResizePreviewRow(
                             keyScales: previewController.keyScales,
                             topScale: previewController.topScale,
-                            colorVision: store.settings.colorVision
+                            colorVision: store.settings.colorVision,
+                            highlightNextLetter: store.settings.nextLetterHighlight
                         )
                         Text("Preview after typing “th”.")
                             .font(.system(size: 12))
@@ -93,12 +95,6 @@ struct SettingsView: View {
                     Text(store.settings.keyboardAppearance.explanation)
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.textSecondary)
-
-                    Text(
-                        "Names and Phrases always stay light, so saved entries read the same way every time."
-                    )
-                    .font(.system(size: 12))
-                    .foregroundStyle(Theme.textMuted)
                 }
 
                 Section("Colour vision") {
@@ -125,7 +121,8 @@ struct SettingsView: View {
                         ResizePreviewRow(
                             keyScales: previewController.keyScales,
                             topScale: previewController.topScale,
-                            colorVision: store.settings.colorVision
+                            colorVision: store.settings.colorVision,
+                            highlightNextLetter: store.settings.nextLetterHighlight
                         )
                         Text(
                             "The top row after typing “th”, tinted by how likely each letter is to come next."
@@ -134,6 +131,39 @@ struct SettingsView: View {
                         .foregroundStyle(Theme.textMuted)
                     }
                     .padding(.vertical, 4)
+                }
+                // The tint has nothing to show once the highlight itself is off.
+                .disabled(!store.settings.nextLetterHighlight)
+
+                Section("Voice") {
+                    NavigationLink {
+                        VoicePickerView(selection: $store.settings.ttsVoiceIdentifier)
+                    } label: {
+                        HStack {
+                            Text("Voice")
+                            Spacer()
+                            Text(voiceDisplayName)
+                                .foregroundStyle(Theme.textSecondary)
+                        }
+                    }
+
+                    Text("Which voice the Practice tool and Blind mode use to speak to you.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.textSecondary)
+                }
+
+                Section("Blind mode") {
+                    Toggle(isOn: $store.settings.blindMode) {
+                        settingLabel(
+                            "Blind mode",
+                            detail:
+                                "Slide one finger over the keys to hear each one. Tap the big Submit key with a second finger to type the key you're on. Lifting the first finger clears the selection."
+                        )
+                    }
+                    .accessibilityIdentifier("blind-mode")
+                    Text("Spoken in the voice chosen above. Works on its own, not alongside VoiceOver.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.textSecondary)
                 }
 
                 Section("Typing") {
@@ -152,7 +182,8 @@ struct SettingsView: View {
                     Toggle(isOn: $store.settings.spellingSuggestions) {
                         settingLabel(
                             "Spelling suggestions",
-                            detail: "When a word isn't in the dictionary, the chips offer the spell checker's guesses."
+                            detail: "When a word isn't in the dictionary, "
+                                + "the chips offer the spell checker's guesses."
                         )
                     }
                     Toggle(isOn: $store.settings.enableCapsLock) {
@@ -176,13 +207,15 @@ struct SettingsView: View {
                     Toggle(isOn: $store.settings.textReplacement) {
                         settingLabel(
                             "Text replacement",
-                            detail: "Use the shortcuts from Settings > General > Keyboard > Text Replacement, and know your contacts' names."
+                            detail: "Use the shortcuts from Settings > General > Keyboard > "
+                                + "Text Replacement, and know your contacts' names."
                         )
                     }
                     Toggle(isOn: $store.settings.nextLetterHighlight) {
                         settingLabel(
                             "Next letter highlight",
-                            detail: "Ring and bold the single most likely next letter."
+                            detail:
+                                "Tint keys by how likely they are to come next, and ring and bold the single most likely one."
                         )
                     }
                     Text(
@@ -204,6 +237,15 @@ struct SettingsView: View {
             .onAppear(perform: updatePreview)
             .onChange(of: store.settings) { _ in updatePreview() }
         }
+    }
+
+    private var voiceDisplayName: String {
+        guard let identifier = store.settings.ttsVoiceIdentifier,
+            let voice = AVSpeechSynthesisVoice(identifier: identifier)
+        else {
+            return "System Default"
+        }
+        return voice.name
     }
 
     private func settingLabel(_ title: String, detail: String) -> some View {
@@ -236,6 +278,7 @@ struct ResizePreviewRow: View {
     let keyScales: [Character: KeyScale]
     let topScale: Double
     var colorVision: ColorVisionMode = .standard
+    var highlightNextLetter: Bool = true
 
     private let keys = Array("qwertyuiop")
 
@@ -250,6 +293,7 @@ struct ResizePreviewRow: View {
                     let width = total > 0 ? geometry.size.width * (scale / total) : 0
                     let isPossible = keyScales[key]?.isPossible ?? true
                     let tier = KeyTier.forScale(scale, isPossible: isPossible, topScale: topScale)
+                        .effective(highlightNextLetter: highlightNextLetter)
 
                     Text(String(key))
                         .font(

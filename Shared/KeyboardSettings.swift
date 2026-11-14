@@ -155,6 +155,13 @@ struct KeyboardSettings: Codable, Equatable {
     var keyboardAppearance: KeyboardAppearance = .system
     /// Which colour vision the key tints are drawn for.
     var colorVision: ColorVisionMode = .standard
+    /// The voice the Practice tool reads typed text back in. `nil` is the
+    /// system default for the current language — a raw `AVSpeechSynthesisVoice`
+    /// identifier rather than an enum, since the voice list is device-dependent.
+    var ttsVoiceIdentifier: String? = nil
+    /// Explore the keys with one finger, hear each one, and type the hovered
+    /// key by tapping Submit with a second finger.
+    var blindMode: Bool = false
 
     // MARK: Typing
 
@@ -177,7 +184,8 @@ struct KeyboardSettings: Codable, Equatable {
     var textReplacement: Bool = true
     /// Offer the spell checker's guesses among the suggestions.
     var spellingSuggestions: Bool = true
-    /// Ring and bold the single most likely next letter.
+    /// Tint keys by how likely they are to come next, and ring and bold the
+    /// single most likely one. Off, every key keeps its plain, neutral face.
     var nextLetterHighlight: Bool = true
 
     static let `default` = KeyboardSettings()
@@ -215,8 +223,13 @@ struct KeyboardSettings: Codable, Equatable {
         colorVision =
             try container.decodeIfPresent(
                 ColorVisionMode.self, forKey: .colorVision) ?? fallback.colorVision
+        ttsVoiceIdentifier =
+            try container.decodeIfPresent(
+                String.self, forKey: .ttsVoiceIdentifier) ?? fallback.ttsVoiceIdentifier
+        blindMode = try container.decodeIfPresent(Bool.self, forKey: .blindMode) ?? fallback.blindMode
         autoCapitalization =
-            try container.decodeIfPresent(Bool.self, forKey: .autoCapitalization) ?? fallback.autoCapitalization
+            try container.decodeIfPresent(
+                Bool.self, forKey: .autoCapitalization) ?? fallback.autoCapitalization
         autoCorrection =
             try container.decodeIfPresent(Bool.self, forKey: .autoCorrection) ?? fallback.autoCorrection
         enableCapsLock =
@@ -228,8 +241,10 @@ struct KeyboardSettings: Codable, Equatable {
         textReplacement =
             try container.decodeIfPresent(Bool.self, forKey: .textReplacement) ?? fallback.textReplacement
         spellingSuggestions =
-            try container.decodeIfPresent(Bool.self, forKey: .spellingSuggestions) ?? fallback.spellingSuggestions
+            try container.decodeIfPresent(
+                Bool.self, forKey: .spellingSuggestions) ?? fallback.spellingSuggestions
         nextLetterHighlight =
-            try container.decodeIfPresent(Bool.self, forKey: .nextLetterHighlight) ?? fallback.nextLetterHighlight
+            try container.decodeIfPresent(
+                Bool.self, forKey: .nextLetterHighlight) ?? fallback.nextLetterHighlight
     }
 }

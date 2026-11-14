@@ -6,7 +6,8 @@ struct PhrasePicker: View {
     let phrases: [PhraseTemplate]
     let onSelect: (PhraseTemplate) -> Void
 
-    /// Only the tray is read from here; see `QuickInsertPanel`.
+    /// Follows the same palette as the keys and toolbar, so the panel matches
+    /// the keyboard's own light/dark appearance.
     @Environment(\.keyboardPalette) private var palette
 
     var body: some View {
@@ -15,10 +16,10 @@ struct PhrasePicker: View {
                 VStack(spacing: 6) {
                     Text("No phrases yet")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Theme.textPrimary)
+                        .foregroundStyle(palette.keyLabel)
                     Text("Create phrases in the Steady app, using {braces} for the blanks.")
                         .font(.system(size: 13))
-                        .foregroundStyle(Theme.textSecondary)
+                        .foregroundStyle(palette.segmentLabel)
                         .multilineTextAlignment(.center)
                 }
                 .padding(24)
@@ -33,17 +34,17 @@ struct PhrasePicker: View {
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text(phrase.title)
                                         .font(.system(size: 17, weight: .semibold))
-                                        .foregroundStyle(Theme.textPrimary)
+                                        .foregroundStyle(palette.keyLabel)
                                     Text(phrase.template)
                                         .font(.system(size: 13))
-                                        .foregroundStyle(Theme.textSecondary)
+                                        .foregroundStyle(palette.segmentLabel)
                                         .lineLimit(2)
                                         .multilineTextAlignment(.leading)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 12)
-                                .background(Theme.keyFace)
+                                .background(palette.keyFace)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                             }
                             .buttonStyle(.plain)
@@ -70,13 +71,14 @@ struct PhraseFillView: View {
     let onRequestFreeText: (PhraseSlot) -> Void
     let onCancel: () -> Void
 
-    /// Only the tray is read from here; see `QuickInsertPanel`.
+    /// Follows the same palette as the keys and toolbar, so the panel matches
+    /// the keyboard's own light/dark appearance.
     @Environment(\.keyboardPalette) private var palette
 
     var body: some View {
         VStack(spacing: 0) {
             preview
-            Divider().overlay(Theme.ruleHairline)
+            Divider().overlay(palette.divider)
             if let slot = session.currentSlot {
                 prompt(for: slot)
             }
@@ -96,16 +98,16 @@ struct PhraseFillView: View {
             if !session.progressLabel.isEmpty {
                 Text(session.progressLabel)
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Theme.brandDark)
+                    .foregroundStyle(palette.highlightLabel)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .background(Theme.brandSoft)
+                    .background(palette.highlightFill)
                     .clipShape(Capsule())
             }
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.surfaceRaised)
+        .background(palette.draftBar)
     }
 
     /// Builds the preview text, tinting filled values and the active blank.
@@ -115,16 +117,16 @@ struct PhraseFillView: View {
             var piece = AttributedString(segment.text)
             switch segment.kind {
             case .literal:
-                piece.foregroundColor = Theme.textPrimary
+                piece.foregroundColor = palette.keyLabel
             case .filled:
-                piece.foregroundColor = Theme.brandDark
+                piece.foregroundColor = palette.highlightLabel
                 piece.inlinePresentationIntent = .stronglyEmphasized
             case .current:
-                piece.foregroundColor = Theme.brand
+                piece.foregroundColor = palette.accent
                 piece.inlinePresentationIntent = .stronglyEmphasized
                 piece.underlineStyle = .single
             case .pending:
-                piece.foregroundColor = Theme.textMuted
+                piece.foregroundColor = palette.keyLabelMuted
             }
             result.append(piece)
         }
@@ -135,14 +137,14 @@ struct PhraseFillView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Choose \(slot.name):")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Theme.textSecondary)
+                .foregroundStyle(palette.segmentLabel)
                 .padding(.horizontal, 12)
                 .padding(.top, 10)
 
             if session.currentChoices.isEmpty && !slot.allowsFreeText {
                 Text("No names yet — add some in the Steady app.")
                     .font(.system(size: 13))
-                    .foregroundStyle(Theme.textMuted)
+                    .foregroundStyle(palette.keyLabelMuted)
                     .padding(.horizontal, 12)
             }
 
@@ -166,9 +168,9 @@ struct PhraseFillView: View {
                         } label: {
                             Text("Type…")
                                 .font(.system(size: 18, weight: .semibold))
-                                .foregroundStyle(Theme.brandDark)
+                                .foregroundStyle(palette.highlightLabel)
                                 .frame(maxWidth: .infinity, minHeight: 60)
-                                .background(Theme.brandSoft)
+                                .background(palette.highlightFill)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
                         .buttonStyle(.plain)
@@ -200,9 +202,9 @@ struct PhraseFillView: View {
             } label: {
                 Text(session.canGoBack ? "‹ Back" : "Cancel")
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Theme.textSecondary)
+                    .foregroundStyle(palette.segmentLabel)
                     .frame(minWidth: 88, minHeight: 48)
-                    .background(Theme.keyFace)
+                    .background(palette.keyFace)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             .buttonStyle(.plain)
@@ -217,7 +219,7 @@ struct PhraseFillView: View {
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity, minHeight: 48)
-                    .background(session.isComplete ? Theme.brand : Theme.textMuted)
+                    .background(session.isComplete ? palette.accent : palette.keyLabelMuted)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             .buttonStyle(.plain)

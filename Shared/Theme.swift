@@ -62,6 +62,14 @@ enum KeyTier {
     }
 
     var isEmphasized: Bool { self == .mostLikely }
+
+    /// With the setting off, every tier but `impossible` reads as `unlikely`
+    /// — a plain, untinted key — while the impossible fade (a separate
+    /// setting) is untouched.
+    func effective(highlightNextLetter: Bool) -> KeyTier {
+        guard !highlightNextLetter, self != .impossible else { return self }
+        return .unlikely
+    }
 }
 
 /// One colour-vision mode's key tints: a face and a label per tier, plus the
@@ -243,6 +251,13 @@ struct KeyboardPalette {
     let accentStroke: Color
     /// The free-text draft bar above the keys.
     let draftBar: Color
+    /// A hairline divider, e.g. between the Phrases preview and its prompt.
+    let divider: Color
+    /// Fill for an emphasised chip or tile — the phrase progress chip, the
+    /// Phrases panel's "Type…" tile.
+    let highlightFill: Color
+    /// The label on `highlightFill`, and a "filled" phrase segment's text.
+    let highlightLabel: Color
     let isDark: Bool
 
     /// Unchanged from what shipped: the existing `Theme` tokens.
@@ -258,6 +273,9 @@ struct KeyboardPalette {
         accent: Theme.brand,
         accentStroke: Theme.brand,
         draftBar: Theme.surfaceRaised,
+        divider: Theme.ruleHairline,
+        highlightFill: Theme.brandSoft,
+        highlightLabel: Theme.brandDark,
         isDark: false
     )
 
@@ -277,6 +295,11 @@ struct KeyboardPalette {
         // ring on it, so dark gets a lighter one.
         accentStroke: Color(hex: 0x6FBFB6),
         draftBar: Color(hex: 0x2A2A2C),
+        divider: Color(hex: 0x3A3A3C),
+        highlightFill: Color(hex: 0x1C3A37),
+        // The same lighter teal as the dark accent ring, for the same reason:
+        // the brand colour is too close to the most-likely key's teal to read.
+        highlightLabel: Color(hex: 0x6FBFB6),
         isDark: true
     )
 }
@@ -300,6 +323,9 @@ extension KeyboardPalette {
             accent: accent,
             accentStroke: accentStroke,
             draftBar: draftBar,
+            divider: divider,
+            highlightFill: highlightFill,
+            highlightLabel: highlightLabel,
             isDark: isDark
         )
     }

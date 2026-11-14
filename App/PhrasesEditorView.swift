@@ -26,6 +26,7 @@ struct PhrasesEditorView: View {
 
     @EnvironmentObject private var store: SharedStore
     @State private var path: [PhraseRoute] = []
+    @State private var editMode: EditMode = .inactive
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -50,19 +51,31 @@ struct PhrasesEditorView: View {
                         "Write a blank as {name}, {minutes}, {place} — anything in braces becomes a blank you fill in when you use the phrase. A {name} blank offers your saved names."
                     )
                 }
-
-                Section {
+            }
+            .environment(\.editMode, $editMode)
+            .navigationTitle("Phrases")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         let phrase = PhraseTemplate(title: "", template: "Hi {name}, ")
                         store.phrases.append(phrase)
                         path.append(.justAdded(phrase.id))
                     } label: {
-                        Label("Add phrase", systemImage: "plus.circle.fill")
+                        Image(systemName: "plus.circle.fill")
                     }
+                    .accessibilityLabel("Add phrase")
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        editMode = editMode == .active ? .inactive : .active
+                    } label: {
+                        Image(
+                            systemName: editMode == .active
+                                ? "checkmark.circle.fill" : "pencil.circle.fill")
+                    }
+                    .accessibilityLabel(editMode == .active ? "Done" : "Edit")
                 }
             }
-            .navigationTitle("Phrases")
-            .toolbar { EditButton() }
             .navigationDestination(for: PhraseRoute.self) { route in
                 if let index = store.phrases.firstIndex(where: { $0.id == route.id }) {
                     PhraseEditor(
@@ -103,9 +116,6 @@ private struct PhraseEditor: View {
                 TextField("Sentence with {blanks}", text: $phrase.template, axis: .vertical)
                     .focused($focusedField, equals: .template)
                     .lineLimit(2...5)
-                Text(phrase.assembled(with: [:]))
-                    .font(.system(size: 13))
-                    .foregroundStyle(Theme.textSecondary)
             }
 
             if phrase.slots.isEmpty {
@@ -181,7 +191,9 @@ private struct PhraseEditor: View {
     /// A two-way binding to one field of one slot, found by id at read and
     /// write time rather than captured by array position — see the comment
     /// above the `ForEach` this backs.
-    private func binding<Value>(for slot: PhraseSlot, _ keyPath: WritableKeyPath<PhraseSlot, Value>) -> Binding<Value> {
+    private func binding<Value>(
+        for slot: PhraseSlot, _ keyPath: WritableKeyPath<PhraseSlot, Value>
+    ) -> Binding<Value> {
         Binding(
             get: { slot[keyPath: keyPath] },
             set: { newValue in update(slot.id) { $0[keyPath: keyPath] = newValue } }

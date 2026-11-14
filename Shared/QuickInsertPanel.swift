@@ -8,9 +8,8 @@ struct QuickInsertPanel: View {
     let onInsert: (QuickInsertEntry) -> Void
 
     @State private var selectedCategoryID: UUID?
-    /// Only the tray is read from here: the panel is always light, and the
-    /// surface hands it the light palette with the tray cleared when the
-    /// system pane behind the keyboard can be the tray instead.
+    /// Follows the same palette as the keys and toolbar, so the panel matches
+    /// the keyboard's own light/dark appearance.
     @Environment(\.keyboardPalette) private var palette
 
     private var selectedCategory: QuickInsertCategory? {
@@ -39,10 +38,10 @@ struct QuickInsertPanel: View {
                     } label: {
                         Text(category.name)
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(isSelected ? .white : Theme.textSecondary)
+                            .foregroundStyle(isSelected ? .white : palette.segmentLabel)
                             .padding(.horizontal, 16)
                             .frame(height: 40)
-                            .background(isSelected ? Theme.brand : Theme.keyFace)
+                            .background(isSelected ? palette.accent : palette.keyFace)
                             .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
@@ -75,10 +74,10 @@ struct QuickInsertPanel: View {
         VStack(spacing: 6) {
             Text("No names yet")
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Theme.textPrimary)
+                .foregroundStyle(palette.keyLabel)
             Text("Add names in the Steady app and they'll appear here.")
                 .font(.system(size: 13))
-                .foregroundStyle(Theme.textSecondary)
+                .foregroundStyle(palette.segmentLabel)
                 .multilineTextAlignment(.center)
         }
         .padding(24)
@@ -98,14 +97,16 @@ struct QuickInsertTile: View {
 
     let text: String
 
+    @Environment(\.keyboardPalette) private var palette
+
     var body: some View {
         Text(text)
             .font(.system(size: 18, weight: .semibold))
-            .foregroundStyle(Theme.textPrimary)
+            .foregroundStyle(palette.keyLabel)
             .lineLimit(1)
             .minimumScaleFactor(0.7)
             .frame(maxWidth: .infinity, minHeight: 60)
-            .background(Theme.keyFace)
+            .background(palette.keyFace)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .shadow(color: .black.opacity(0.14), radius: 0, x: 0, y: 1)
     }

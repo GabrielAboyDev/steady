@@ -34,6 +34,16 @@ enum KeyboardPanel: String, CaseIterable, Identifiable {
     }
 }
 
+/// Replaces the return key's default "insert a newline" behaviour and label.
+/// Used by the Practice tool's text-to-speech toggle to turn Return into a
+/// play/pause control; `nil` everywhere else keeps today's behaviour.
+struct ReturnKeyOverride {
+    let symbol: String
+    let accessibilityLabel: String
+    var isEnabled: Bool = true
+    let action: () -> Void
+}
+
 /// The whole keyboard surface: panel toolbar, suggestion chips, the reshaping
 /// keyboard, and the Names / Phrases panels.
 ///
@@ -61,6 +71,9 @@ struct KeyboardSurface: View {
     /// keyboard and starts this view a little below the pane's top edge. The
     /// practice pad has no such pane and paints its own tray.
     var sitsOnSystemBackdrop: Bool = false
+    /// When set, replaces the return key's default behaviour — see
+    /// `ReturnKeyOverride`.
+    var returnKeyOverride: ReturnKeyOverride?
 
     /// Measured against the system backdrop on iOS 26: its corner fits a
     /// ~29pt circle and this view starts ~19pt below its top, so ~10pt is the
@@ -76,6 +89,7 @@ struct KeyboardSurface: View {
     /// Non-nil while the user types a free-text value for a phrase blank.
     @State private var freeTextSlot: PhraseSlot?
     @StateObject private var freeTextBuffer = BufferTextSink(traits: .phraseBlank)
+    @StateObject private var speaker = KeySpeaker()
 
     /// In the extension this is the host app's appearance, which is what the
     /// `system` appearance setting follows.
@@ -95,12 +109,6 @@ struct KeyboardSurface: View {
         seated(store.settings.keyboardAppearance.palette(for: hostScheme))
     }
 
-    /// What the Names and Phrases panels draw with. They are always light (see
-    /// `LightPanel`), so they sit on the pane exactly when the host is light.
-    private var panelPalette: KeyboardPalette {
-        seated(.light)
-    }
-
     /// `base` with its tray cleared whenever the system pane can be the tray.
     ///
     /// On the pane the surface fills it instead of painting a slab of its own
@@ -108,8 +116,7 @@ struct KeyboardSurface: View {
     /// suggestions or the panel is then simply more tray rather than something
     /// showing from behind. That only works while the pane's tone agrees with
     /// what sits on it — the pane follows the host app, so a keyboard forced
-    /// to the opposite appearance, or a light panel in a dark host, keeps its
-    /// own tray.
+    /// to the opposite appearance keeps its own tray.
     private func seated(_ base: KeyboardPalette) -> KeyboardPalette {
         let paneMatches = base.isDark == (hostScheme == .dark)
         return sitsOnSystemBackdrop && paneMatches ? base.onSystemBackdrop : base
@@ -143,11 +150,9 @@ struct KeyboardSurface: View {
                     keyboardStack
                 case .names:
                     QuickInsertPanel(categories: store.categories, onInsert: insertQuickEntry)
-                        .modifier(LightPanel(palette: panelPalette))
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 case .phrases:
                     phrasesPanel
-                        .modifier(LightPanel(palette: panelPalette))
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 }
             }
@@ -156,7 +161,7 @@ struct KeyboardSurface: View {
             // this the surface shrank around it — the one state every new
             // install starts in.
         }
-        .background(surfaceBackground)
+        .background(palette.tray)
         // iOS draws its own rounded, lighter backdrop behind every keyboard
         // and places this view a short way below its top edge — outside the
         // view, with no safe-area inset to read. Whenever the surface does
@@ -177,18 +182,6 @@ struct KeyboardSurface: View {
             guard !isCapsLocked else { return }
             isShifted = controller.autoShift
         }
-    }
-
-    /// True while a panel that must stay light is on screen.
-    private var isShowingLightPanel: Bool {
-        freeTextSlot == nil && panel != .keyboard
-    }
-
-    /// Whatever the panels don't paint themselves. It follows the light panels
-    /// rather than the keyboard, so a short Names list doesn't leave a dark
-    /// strip under itself — and clears with them, so the pane shows through.
-    private var surfaceBackground: Color {
-        isShowingLightPanel ? panelPalette.tray : palette.tray
     }
 
     // MARK: Toolbar
@@ -285,7 +278,8 @@ struct KeyboardSurface: View {
     private var keyboardStack: some View {
         let traits = activeSink.traits
         let returnEnabled =
-            !(traits.enablesReturnKeyAutomatically && (activeSink.contextBeforeInput ?? "").isEmpty)
+            returnKeyOverride?.isEnabled
+            ?? !(traits.enablesReturnKeyAutomatically && (activeSink.contextBeforeInput ?? "").isEmpty)
         return DynamicKeyboardView(
             keyScales: controller.keyScales,
             topScale: controller.topScale,
@@ -295,11 +289,15 @@ struct KeyboardSurface: View {
             traits: traits,
             capsLockEnabled: controller.rules.capsLock,
             returnEnabled: returnEnabled,
+            returnKeySymbolOverride: returnKeyOverride?.symbol,
+            returnKeyAccessibilityLabel: returnKeyOverride?.accessibilityLabel,
+            blindMode: store.settings.blindMode,
+            onSpeak: speak,
             isShifted: $isShifted,
             isCapsLocked: $isCapsLocked,
             onInsert: insert,
             onDelete: deleteBackward,
-            onReturn: { insert("\n") },
+            onReturn: returnKeyOverride?.action ?? { insert("\n") },
             onMoveCursor: moveCursor,
             onDeleteWord: deleteWordBackward
         )
@@ -428,6 +426,11 @@ struct KeyboardSurface: View {
         refresh()
     }
 
+    /// Blind mode reading a key name aloud, in the voice chosen in Settings.
+    private func speak(_ text: String) {
+        speaker.speak(text, voiceIdentifier: store.settings.ttsVoiceIdentifier)
+    }
+
     /// A name is one tap: it goes in and the keys come back, because the next
     /// thing the user wants is almost always to carry on typing.
     private func insertQuickEntry(_ entry: QuickInsertEntry) {
@@ -441,7 +444,8 @@ struct KeyboardSurface: View {
     /// this writes to `sink` rather than `activeSink` — and the keys come back.
     private func insertPhrase(_ sentence: String) {
         sink.playKeyClick()
-        composer.insert(sentence, rules: TypingRules(traits: sink.traits, settings: store.settings), into: sink)
+        composer.insert(
+            sentence, rules: TypingRules(traits: sink.traits, settings: store.settings), into: sink)
         phraseSession = nil
         panel = .keyboard
         refresh()
@@ -484,25 +488,6 @@ struct KeyboardSurface: View {
         // A saved name is spelled the way its owner spells it.
         composer.knownWords = Set(
             store.allQuickInsertTexts.flatMap { $0.split(separator: " ") }.map { $0.lowercased() })
-    }
-}
-
-/// Names and Phrases stay light whatever the keyboard appearance is — that is
-/// a stated requirement, not an oversight.
-///
-/// Pinning the two panel subtrees is also what makes a dark keyboard possible
-/// at all: the alternative, pinning the whole input view with
-/// `overrideUserInterfaceStyle = .light`, would force the keys light too.
-///
-/// `palette` is the light palette, with or without its tray: the panels read
-/// their slab from it, so they can sit on the system pane the way the keys do.
-private struct LightPanel: ViewModifier {
-    let palette: KeyboardPalette
-
-    func body(content: Content) -> some View {
-        content
-            .environment(\.keyboardPalette, palette)
-            .environment(\.colorScheme, .light)
     }
 }
 
