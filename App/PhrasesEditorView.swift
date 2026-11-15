@@ -103,6 +103,7 @@ private struct PhraseEditor: View {
 
     @EnvironmentObject private var store: SharedStore
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dismiss) private var dismiss
     @FocusState private var focusedField: Field?
 
     var body: some View {
@@ -186,6 +187,11 @@ private struct PhraseEditor: View {
             }
         }
         .navigationTitle(phrase.title.isEmpty ? "Phrase" : phrase.title)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Save") { dismiss() }
+            }
+        }
         .onAppear {
             syncSlots()
             if focusTitleOnAppear { focusedField = .title }

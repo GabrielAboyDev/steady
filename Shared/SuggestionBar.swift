@@ -47,10 +47,16 @@ struct SuggestionBar: View {
     var body: some View {
         Group {
             if suggestions.isEmpty {
-                Text(areNextWord ? "Keep typing" : "No suggestions")
+                let message = areNextWord ? "Keep typing" : "No suggestions"
+                Text(message)
                     .font(.system(size: 14))
                     .foregroundStyle(palette.keyLabelMuted)
                     .frame(maxWidth: .infinity, minHeight: rowHeight)
+                    // Hearable in blind mode, so the row never goes silent
+                    // under a finger that expects words there.
+                    .blindTarget(.item("suggestions-empty"), spokenName: message, cornerRadius: 8) {
+                        message
+                    }
             } else {
                 switch browsing {
                 case .scroll: scrollingRow
@@ -150,6 +156,13 @@ struct SuggestionBar: View {
         .accessibilityIdentifier(identifier)
         .accessibilityLabel(areNextWord ? "Insert next word \(word)" : "Complete word as \(word)")
         .accessibilityAddTraits(rank == 0 ? [.isSelected] : [])
+        // Keyed by slot, like the identifier: a finger resting on the first
+        // slot keeps its selection as the words change under it, instead of
+        // the new word cutting off the key it has just heard typed.
+        .blindTarget(.item(identifier), spokenName: word, cornerRadius: 8) {
+            onPick(word)
+            return word
+        }
     }
 
     private func arrow(
@@ -170,6 +183,16 @@ struct SuggestionBar: View {
         .disabled(!enabled)
         .accessibilityIdentifier(identifier)
         .accessibilityLabel(label)
+        .blindTarget(
+            .item(identifier), spokenName: enabled ? label.lowercased() : "no \(label.lowercased())",
+            cornerRadius: 8
+        ) {
+            guard enabled else { return "no \(label.lowercased())" }
+            action()
+            // The page just turned to: a blind user hears what is now on
+            // offer without having to find each slot.
+            return currentPage.joined(separator: ", ")
+        }
     }
 
     private var rule: some View {

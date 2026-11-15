@@ -176,13 +176,27 @@ struct SettingsView: View {
                         settingLabel(
                             "Blind mode",
                             detail:
-                                "Slide one finger over the keys to hear each one. Tap the big Submit key with a second finger to type the key you're on. Lifting the first finger clears the selection."
+                                "Slide one finger over the keys, the suggestions, your phrases and names to hear each one. Tap the big Submit key with a second finger to type or pick the one you're on. Lifting the first finger clears the selection."
                         )
                     }
                     .accessibilityIdentifier("blind-mode")
                     Text("Spoken in the voice chosen above. Works on its own, not alongside VoiceOver.")
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.textSecondary)
+
+                    Toggle(isOn: $store.settings.readBeforeReturn) {
+                        settingLabel(
+                            "Read message before sending",
+                            detail:
+                                "Return reads the whole message aloud first. It only sends once "
+                                + "that finishes; editing the message, or cutting the reading off "
+                                + "by exploring another key, asks for a fresh read before it will "
+                                + "send again."
+                        )
+                    }
+                    .accessibilityIdentifier("blind-mode-read-before-return")
+                    .disabled(!store.settings.blindMode)
+
                     VStack(alignment: .leading, spacing: 6) {
                         Text(
                             "To hear keys in other apps, turn on Allow Full Access in Settings > General > Keyboard > Keyboards > Steady. iOS won't let a keyboard make a sound without it. Steady uses it only for that: it still makes no network calls, and the Practice tool speaks without it."

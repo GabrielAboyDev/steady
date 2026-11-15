@@ -4,7 +4,9 @@ import SwiftUI
 struct PhrasePicker: View {
 
     let phrases: [PhraseTemplate]
-    let onSelect: (PhraseTemplate) -> Void
+    /// Takes the phrase, and returns what blind mode should say about it: the
+    /// sentence that went in, or the first blank now being asked.
+    let onSelect: (PhraseTemplate) -> String?
 
     /// Follows the same palette as the keys and toolbar, so the panel matches
     /// the keyboard's own light/dark appearance.
@@ -13,23 +15,28 @@ struct PhrasePicker: View {
     var body: some View {
         Group {
             if phrases.isEmpty {
+                let title = "No phrases yet"
+                let detail = "Create phrases in the Steady app, using {braces} for the blanks."
                 VStack(spacing: 6) {
-                    Text("No phrases yet")
+                    Text(title)
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(palette.keyLabel)
-                    Text("Create phrases in the Steady app, using {braces} for the blanks.")
+                    Text(detail)
                         .font(.system(size: 13))
                         .foregroundStyle(palette.segmentLabel)
                         .multilineTextAlignment(.center)
                 }
                 .padding(24)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .blindTarget(.item("phrases-empty"), spokenName: "\(title). \(detail)", cornerRadius: 12) {
+                    nil
+                }
             } else {
                 ScrollView {
                     VStack(spacing: 10) {
                         ForEach(phrases) { phrase in
                             Button {
-                                onSelect(phrase)
+                                _ = onSelect(phrase)
                             } label: {
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text(phrase.title)
@@ -49,6 +56,11 @@ struct PhrasePicker: View {
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel("Use phrase \(phrase.title)")
+                            .blindTarget(
+                                .item("phrase-\(phrase.id)"), spokenName: phrase.title, cornerRadius: 12
+                            ) {
+                                onSelect(phrase)
+                            }
                         }
                     }
                     .padding(10)
@@ -108,6 +120,31 @@ struct PhraseFillView: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(palette.draftBar)
+        // The sentence so far, read with each blank named; submitting it
+        // simply reads it again.
+        .blindTarget(.item("phrase-preview"), spokenName: spokenPreview, cornerRadius: 8) { spokenPreview }
+    }
+
+    /// The preview as blind mode reads it: filled blanks as their values,
+    /// open ones as "blank for name".
+    private var spokenPreview: String {
+        session.segments.map { segment -> String in
+            switch segment.kind {
+            case .literal, .filled:
+                return segment.text
+            case .current, .pending:
+                let name = segment.text.trimmingCharacters(in: CharacterSet(charactersIn: "{}"))
+                return " blank for \(name) "
+            }
+        }
+        .joined()
+        .replacingOccurrences(of: "  ", with: " ")
+    }
+
+    /// What blind mode says once a blank is answered: the next one to fill,
+    /// or that the sentence is ready.
+    private var nextPrompt: String {
+        session.currentSlot.map { "Choose \($0.name)" } ?? "Ready to insert"
     }
 
     /// Builds the preview text, tinting filled values and the active blank.
@@ -154,12 +191,16 @@ struct PhraseFillView: View {
                 LazyVGrid(columns: quickInsertGridColumns, spacing: 10) {
                     ForEach(session.currentChoices) { choice in
                         Button {
-                            answer(with: choice.text)
+                            _ = answer(with: choice.text)
                         } label: {
                             QuickInsertTile(text: choice.text)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Fill \(slot.name) with \(choice.text)")
+                        .blindTarget(.item("choice-\(choice.id)"), spokenName: choice.text, cornerRadius: 12)
+                        {
+                            answer(with: choice.text)
+                        }
                     }
 
                     if slot.allowsFreeText {
@@ -175,6 +216,11 @@ struct PhraseFillView: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Type a value for \(slot.name)")
+                        .blindTarget(.item("phrase-type"), spokenName: "type \(slot.name)", cornerRadius: 12)
+                        {
+                            onRequestFreeText(slot)
+                            return "Typing \(slot.name)"
+                        }
                     }
                 }
                 .padding(10)
@@ -183,22 +229,32 @@ struct PhraseFillView: View {
     }
 
     /// Fill the current blank; when it was the last one, the sentence goes
-    /// straight in rather than waiting for a second tap.
-    private func answer(with value: String) {
+    /// straight in rather than waiting for a second tap. Returns what blind
+    /// mode says about it: the sentence that went in, or the value and the
+    /// next blank.
+    private func answer(with value: String) -> String? {
         session.select(value)
         if session.isFinished {
             onInsert(session.assembledText)
+            return session.assembledText
         }
+        return "\(value). \(nextPrompt)"
+    }
+
+    /// The Back / Cancel button's work, with what blind mode says about it.
+    private func stepBack() -> String? {
+        if session.canGoBack {
+            session.back()
+            return nextPrompt
+        }
+        onCancel()
+        return "Phrases"
     }
 
     private var controls: some View {
         HStack(spacing: 10) {
             Button {
-                if session.canGoBack {
-                    session.back()
-                } else {
-                    onCancel()
-                }
+                _ = stepBack()
             } label: {
                 Text(session.canGoBack ? "‹ Back" : "Cancel")
                     .font(.system(size: 15, weight: .semibold))
@@ -208,6 +264,11 @@ struct PhraseFillView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             .buttonStyle(.plain)
+            .blindTarget(
+                .item("phrase-back"), spokenName: session.canGoBack ? "back" : "cancel", cornerRadius: 12
+            ) {
+                stepBack()
+            }
 
             // Only ever enabled while the blanks still to come are optional:
             // it is how the user skips them. A required last blank inserts on
@@ -226,6 +287,16 @@ struct PhraseFillView: View {
             .accessibilityIdentifier("insertSentence")
             .disabled(!session.isComplete)
             .accessibilityHint(session.isComplete ? "" : "Fill every blank first")
+            .blindTarget(
+                .item("insertSentence"),
+                spokenName: session.isComplete
+                    ? "insert sentence" : "insert sentence. Fill every blank first",
+                cornerRadius: 12
+            ) {
+                guard session.isComplete else { return "Fill every blank first" }
+                onInsert(session.assembledText)
+                return session.assembledText
+            }
         }
         .padding(10)
     }

@@ -50,6 +50,15 @@ struct QuickInsertPanel: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+                    .blindTarget(
+                        .item("category-\(category.id)"),
+                        spokenName: isSelected ? "\(category.name), selected" : category.name,
+                        cornerRadius: 20
+                    ) {
+                        selectedCategoryID = category.id
+                        let count = category.entries.count
+                        return "\(category.name), \(count) \(count == 1 ? "name" : "names")"
+                    }
                 }
             }
             .padding(.horizontal, 10)
@@ -81,6 +90,13 @@ struct QuickInsertPanel: View {
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("insert-variable")
                     .accessibilityLabel("Insert a \(category.name) blank")
+                    .blindTarget(
+                        .item("insert-variable"), spokenName: "insert a \(category.name) blank",
+                        cornerRadius: 12
+                    ) {
+                        onInsertVariable(category)
+                        return "\(category.name) blank"
+                    }
                 }
                 ForEach(selectedCategory?.entries ?? []) { entry in
                     Button {
@@ -90,6 +106,10 @@ struct QuickInsertPanel: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Insert \(entry.text)")
+                    .blindTarget(.item("name-\(entry.id)"), spokenName: entry.text, cornerRadius: 12) {
+                        onInsert(entry)
+                        return entry.text
+                    }
                 }
             }
             .padding(10)
@@ -97,17 +117,20 @@ struct QuickInsertPanel: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 6) {
-            Text("No names yet")
+        let title = "No names yet"
+        let detail = "Add names in the Steady app and they'll appear here."
+        return VStack(spacing: 6) {
+            Text(title)
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(palette.keyLabel)
-            Text("Add names in the Steady app and they'll appear here.")
+            Text(detail)
                 .font(.system(size: 13))
                 .foregroundStyle(palette.segmentLabel)
                 .multilineTextAlignment(.center)
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .blindTarget(.item("names-empty"), spokenName: "\(title). \(detail)", cornerRadius: 12) { nil }
     }
 }
 

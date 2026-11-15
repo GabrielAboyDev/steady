@@ -168,6 +168,11 @@ struct KeyboardSettings: Codable, Equatable {
     /// Explore the keys with one finger, hear each one, and type the hovered
     /// key by tapping Submit with a second finger.
     var blindMode: Bool = false
+    /// In Blind mode, Return first reads the whole message aloud instead of
+    /// sending it. It only sends once that reading has played start to
+    /// finish; editing the message afterward, or cutting the reading off by
+    /// exploring another key, puts it back to needing a fresh read.
+    var readBeforeReturn: Bool = false
 
     // MARK: Typing
 
@@ -234,6 +239,8 @@ struct KeyboardSettings: Codable, Equatable {
             try container.decodeIfPresent(
                 String.self, forKey: .ttsVoiceIdentifier) ?? fallback.ttsVoiceIdentifier
         blindMode = try container.decodeIfPresent(Bool.self, forKey: .blindMode) ?? fallback.blindMode
+        readBeforeReturn =
+            try container.decodeIfPresent(Bool.self, forKey: .readBeforeReturn) ?? fallback.readBeforeReturn
         autoCapitalization =
             try container.decodeIfPresent(
                 Bool.self, forKey: .autoCapitalization) ?? fallback.autoCapitalization

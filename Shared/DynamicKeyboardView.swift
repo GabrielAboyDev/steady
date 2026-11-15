@@ -39,11 +39,17 @@ struct DynamicKeyboardView: View {
     var returnKeySymbolOverride: String? = nil
     /// The accessibility label to pair with `returnKeySymbolOverride`.
     var returnKeyAccessibilityLabel: String? = nil
+    /// Whether committing Return in blind mode should hear the usual "return
+    /// key's name" confirmation afterward. `false` while `onReturn` is itself
+    /// a key-name-sized announcement — Blind mode's read-before-return
+    /// speaks the whole message instead, and the default confirmation would
+    /// immediately cut that reading off.
+    var returnKeyAnnouncesOnCommit = true
     /// Explore-and-submit input: one finger hovers a key and hears its name,
-    /// a tap on the Submit key types it.
+    /// a tap on the Submit key types it. The touch layer itself belongs to
+    /// `KeyboardSurface`, which covers the whole keyboard; this view reports
+    /// each key as a target and lays out the Submit key.
     var blindMode = false
-    /// Speaks a key name in blind mode.
-    var onSpeak: (String) -> Void = { _ in }
 
     /// Owned by the surface: autocapitalization sets it after every key, and
     /// the shift key overrides it until the next letter.
@@ -75,8 +81,6 @@ struct DynamicKeyboardView: View {
     /// Set the first time that timer fires, so lifting the touch afterward
     /// doesn't also fire the single-character tap.
     @State private var didDeleteWordOnHold = false
-    /// The key under the exploring finger in blind mode.
-    @State private var hoveredKey: KeyID?
 
     init(
         keyScales: [Character: KeyScale],
@@ -89,8 +93,8 @@ struct DynamicKeyboardView: View {
         returnEnabled: Bool = true,
         returnKeySymbolOverride: String? = nil,
         returnKeyAccessibilityLabel: String? = nil,
+        returnKeyAnnouncesOnCommit: Bool = true,
         blindMode: Bool = false,
-        onSpeak: @escaping (String) -> Void = { _ in },
         isShifted: Binding<Bool>,
         isCapsLocked: Binding<Bool>,
         onInsert: @escaping (String) -> Void,
@@ -109,8 +113,8 @@ struct DynamicKeyboardView: View {
         self.returnEnabled = returnEnabled
         self.returnKeySymbolOverride = returnKeySymbolOverride
         self.returnKeyAccessibilityLabel = returnKeyAccessibilityLabel
+        self.returnKeyAnnouncesOnCommit = returnKeyAnnouncesOnCommit
         self.blindMode = blindMode
-        self.onSpeak = onSpeak
         _isShifted = isShifted
         _isCapsLocked = isCapsLocked
         self.onInsert = onInsert
@@ -160,30 +164,6 @@ struct DynamicKeyboardView: View {
         .onChange(of: traits.opensOnNumbers) { opensOnNumbers in
             plane = opensOnNumbers ? .numbers : .letters
         }
-        .overlayPreferenceValue(KeyFramesPreferenceKey.self) { anchors in
-            if blindMode {
-                GeometryReader { proxy in
-                    BlindModeTouchOverlay(
-                        frames: anchors.mapValues { proxy[$0] },
-                        onHover: { id in
-                            hoveredKey = id
-                            if let id { onSpeak(id.spokenName(in: spokenContext)) }
-                        },
-                        onSubmitHovered: { onSpeak("submit") },
-                        onSubmit: {
-                            guard let id = hoveredKey else {
-                                onSpeak("nothing selected")
-                                return
-                            }
-                            commit(id)
-                        }
-                    )
-                }
-            }
-        }
-        .onChange(of: blindMode) { isOn in
-            if !isOn { hoveredKey = nil }
-        }
     }
 
     // MARK: Blind mode
@@ -197,25 +177,25 @@ struct DynamicKeyboardView: View {
         returnKeyAccessibilityLabel ?? traits.returnKeyLabel
     }
 
-    /// Does what tapping `key` does, then says what happened.
-    private func commit(_ key: KeyID) {
+    /// Does what tapping `key` does, and returns what to say about it. This
+    /// is every key's blind-mode submit; the report itself is inert until the
+    /// surface puts its touch layer up.
+    private func commit(_ key: KeyID) -> String? {
         switch key {
         case .character(let character): tapCharacter(character)
         case .space: onInsert(" ")
         case .delete: onDelete()
         case .returnKey:
-            guard returnEnabled else {
-                onSpeak("\(returnLabel) is off")
-                return
-            }
+            guard returnEnabled else { return "\(returnLabel) is off" }
             onReturn()
+            if !returnKeyAnnouncesOnCommit { return nil }
         case .shift: tapShift()
         case .planeToggle: togglePrimaryPlane()
         case .secondaryPlaneToggle: toggleSecondaryPlane()
         case .extra(let text): onInsert(text)
-        case .submit: return
+        case .submit, .item: return nil
         }
-        onSpeak(confirmation(for: key))
+        return confirmation(for: key)
     }
 
     /// Toggles report the state they switched to, not the key's name.
@@ -235,14 +215,6 @@ struct DynamicKeyboardView: View {
         }
     }
 
-    /// Ring around the hovered key, so a sighted helper can follow along.
-    private func hoverRing(_ id: KeyID?, inset: CGFloat = 0) -> some View {
-        RoundedRectangle(cornerRadius: 6)
-            .strokeBorder(palette.accent, lineWidth: 3)
-            .padding(.horizontal, inset)
-            .opacity(id != nil && hoveredKey == id ? 1 : 0)
-    }
-
     // MARK: Letter rows
 
     private func keyRow(_ rowKeys: [Character], isIndented: Bool) -> some View {
@@ -260,8 +232,11 @@ struct DynamicKeyboardView: View {
                     } else {
                         keyCap(for: key, metrics: metrics)
                             .frame(width: widths[index], height: baseKeyHeight * metrics.heightFactor)
-                            .overlay(hoverRing(.character(key), inset: keySpacing / 2))
-                            .reportsKeyFrame(.character(key))
+                            .blindTarget(
+                                .character(key),
+                                spokenName: KeyID.character(key).spokenName(in: spokenContext),
+                                ringInset: keySpacing / 2
+                            ) { commit(.character(key)) }
                             .opacity(metrics.opacity)
                     }
                 }
@@ -430,7 +405,7 @@ struct DynamicKeyboardView: View {
 
             returnKey(width: nil)
 
-            utilityKey("Submit", width: 76, isActive: true, id: .submit) {}
+            BlindSubmitKey()
         }
     }
 
@@ -633,7 +608,6 @@ struct DynamicKeyboardView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(label))
-        .overlay(hoverRing(id))
-        .reportsKeyFrame(id)
+        .blindTarget(id, spokenName: id?.spokenName(in: spokenContext) ?? "") { id.flatMap(commit) }
     }
 }

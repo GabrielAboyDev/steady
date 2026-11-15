@@ -39,18 +39,26 @@ extension AVSpeechSynthesisVoice {
 }
 
 /// Speaks short key names for blind mode, cutting off whatever it was saying.
-final class KeySpeaker: ObservableObject {
+final class KeySpeaker: NSObject, ObservableObject {
 
     private let synthesizer = AVSpeechSynthesizer()
+    /// Runs once the utterance just started finishes start to end. A later
+    /// `speak` call cuts the current one off before this fires — the
+    /// synthesizer reports that as a cancellation, never a finish — so this
+    /// only ever runs for a reading nothing interrupted.
+    private var completion: (() -> Void)?
 
-    init() {
+    override init() {
+        super.init()
         // The synthesizer brings up its own audio session: a keyboard
         // extension may not be allowed to configure the app-wide one.
         synthesizer.usesApplicationAudioSession = false
+        synthesizer.delegate = self
     }
 
-    func speak(_ text: String, voiceIdentifier: String?) {
+    func speak(_ text: String, voiceIdentifier: String?, onFinish: (() -> Void)? = nil) {
         synthesizer.stopSpeaking(at: .immediate)
+        completion = onFinish
         let utterance = AVSpeechUtterance(attributedString: Self.pronounced(text))
         utterance.voice = .preferred(identifier: voiceIdentifier)
         utterance.rate = text.count <= 1 ? 0.58 : AVSpeechUtteranceDefaultSpeechRate
@@ -72,5 +80,13 @@ final class KeySpeaker: ObservableObject {
         result.addAttribute(
             NSAttributedString.Key(AVSpeechSynthesisIPANotationAttribute), value: "eɪ", range: range)
         return result
+    }
+}
+
+extension KeySpeaker: AVSpeechSynthesizerDelegate {
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        let callback = completion
+        completion = nil
+        DispatchQueue.main.async { callback?() }
     }
 }
