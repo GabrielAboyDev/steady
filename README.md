@@ -13,7 +13,9 @@ letter only a limited set of words remains possible, so Steady **enlarges the le
 likely to come next and shrinks or removes the ones that can't follow**. Tap targets grow
 as the word narrows.
 
-Everything runs on the device. No network calls, and no "Allow Full Access" permission.
+Everything runs on the device, and nothing makes a network call. Typing, prediction, names
+and phrases work without "Allow Full Access". The switch exists for one reason: iOS lets no
+keyboard play sound without it, so Blind mode is silent in other apps until it is on.
 
 ## What's here
 
@@ -68,16 +70,25 @@ the word back), text replacements and contact names from the system lexicon
 (`requestSupplementaryLexicon`, granted without Full Access), spelling guesses in the
 suggestion row (`UITextChecker`), curly quotes and em dashes, the two-space full stop, and
 a space before a name or phrase dropped in mid-sentence. Keyboard clicks come through
-`UIInputViewAudioFeedback`, so iOS itself honours the user's Keyboard Clicks switch.
+`UIInputViewAudioFeedback`, so iOS itself honours the user's Keyboard Clicks switch. A
+light haptic per key is Steady's own switch, off by default (`UIImpactFeedbackGenerator`).
 
 ## Beyond typing
 
 - **Names** — saved entries that insert verbatim, for proper nouns prediction will never guess.
 - **Phrases** — sentence templates with `{slot}` variables. A `{name}` slot draws from your
-  Names list. Picking a phrase walks you through each blank with large chips, then inserts
-  the finished sentence.
+  Names list, and a slot named after one of your Names categories (`{People}`) draws from
+  just that category. While you write a sentence in the phrase editor with Steady up, the
+  Names panel leads with a Variable tile that writes that blank for you. Picking a phrase
+  walks you through each blank with large chips, then inserts the finished sentence.
 
 Both are edited in the app and shared to the keyboard through an app group.
+
+- **Blind mode** — slide one finger over the keys to hear each one, and tap the Submit key
+  with a second finger to type it. The practice pad speaks straight away. In other apps the
+  keyboard runs as an extension, and iOS refuses an extension an audio session until the user
+  grants Allow Full Access; until then the suggestion row says so instead of staying silent.
+  Full Access unlocks nothing else here: the extension opens no connection with or without it.
 
 ## Building
 

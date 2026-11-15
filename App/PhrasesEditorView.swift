@@ -48,7 +48,7 @@ struct PhrasesEditorView: View {
                     }
                 } footer: {
                     Text(
-                        "Write a blank as {name}, {minutes}, {place} — anything in braces becomes a blank you fill in when you use the phrase. A {name} blank offers your saved names."
+                        "Write a blank as {name}, {minutes}, {place} — anything in braces becomes a blank you fill in when you use the phrase. A {name} blank offers all your saved names; a blank named after a Names category, like {People}, offers just that category. With the Steady keyboard up, the Names panel's first tile writes one for you."
                     )
                 }
             }
@@ -101,6 +101,8 @@ private struct PhraseEditor: View {
     let nameOptions: [String]
     var focusTitleOnAppear: Bool = false
 
+    @EnvironmentObject private var store: SharedStore
+    @Environment(\.scenePhase) private var scenePhase
     @FocusState private var focusedField: Field?
 
     var body: some View {
@@ -146,6 +148,18 @@ private struct PhraseEditor: View {
                         )
                         .font(.system(size: 12))
                         .foregroundStyle(Theme.textMuted)
+                    } else if let category = category(for: slot) {
+                        // Named after one of the Names categories: it offers
+                        // just that category, which is what the keyboard's
+                        // Variable tile wrote it for.
+                        Text(
+                            category.entries.isEmpty
+                                ? "Offers your \(category.name) names — none saved yet."
+                                : "Offers your \(category.name) names: "
+                                    + category.entries.map(\.text).joined(separator: ", ")
+                        )
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.textMuted)
                     } else {
                         TextField(
                             "Options, separated by commas",
@@ -177,6 +191,23 @@ private struct PhraseEditor: View {
             if focusTitleOnAppear { focusedField = .title }
         }
         .onChange(of: phrase.template) { _ in syncSlots() }
+        // Tell the keyboard when the sentence is what's being typed, so its
+        // Names panel offers a blank instead of a name. Off again whenever
+        // focus moves, the screen closes, or the app leaves the foreground
+        // — the flag must never outlive the field, or every other app's
+        // Names panel would offer blanks too.
+        .onChange(of: focusedField) { field in
+            store.noteEditingPhraseTemplate(field == .template)
+        }
+        .onChange(of: scenePhase) { phase in
+            store.noteEditingPhraseTemplate(phase == .active && focusedField == .template)
+        }
+        .onDisappear { store.noteEditingPhraseTemplate(false) }
+    }
+
+    /// The category whose entries a blank with this name would offer, if any.
+    private func category(for slot: PhraseSlot) -> QuickInsertCategory? {
+        store.categories.first { $0.name.caseInsensitiveCompare(slot.name) == .orderedSame }
     }
 
     /// Keep the stored slot list in step with the braces in the sentence,

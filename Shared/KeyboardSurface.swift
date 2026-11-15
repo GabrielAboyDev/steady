@@ -74,6 +74,12 @@ struct KeyboardSurface: View {
     /// When set, replaces the return key's default behaviour — see
     /// `ReturnKeyOverride`.
     var returnKeyOverride: ReturnKeyOverride?
+    /// Whether speech can be heard here. The practice pad always can; the
+    /// extension only once the user has granted Allow Full Access, since iOS
+    /// lets no keyboard start an audio session without it. While Blind mode
+    /// is on and this is false, the top row says so instead of showing
+    /// suggestions — the synthesizer would otherwise fail without a sound.
+    var canPlayAudio: Bool = true
 
     /// Measured against the system backdrop on iOS 26: its corner fits a
     /// ~29pt circle and this view starts ~19pt below its top, so ~10pt is the
@@ -90,6 +96,7 @@ struct KeyboardSurface: View {
     @State private var freeTextSlot: PhraseSlot?
     @StateObject private var freeTextBuffer = BufferTextSink(traits: .phraseBlank)
     @StateObject private var speaker = KeySpeaker()
+    @StateObject private var haptics = KeyHaptics()
 
     /// In the extension this is the host app's appearance, which is what the
     /// `system` appearance setting follows.
@@ -129,6 +136,10 @@ struct KeyboardSurface: View {
             // so the toolbar under it stays put when the panel changes.
             if freeTextSlot != nil {
                 freeTextDraftBar
+            } else if store.settings.blindMode && !canPlayAudio {
+                // Same slot and height as the suggestions, so the extension's
+                // fixed height still fits the keys below.
+                speechUnavailableBar
             } else if store.settings.showSuggestionChips {
                 SuggestionBar(
                     suggestions: controller.suggestions,
@@ -149,8 +160,11 @@ struct KeyboardSurface: View {
                 case .keyboard:
                     keyboardStack
                 case .names:
-                    QuickInsertPanel(categories: store.categories, onInsert: insertQuickEntry)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    QuickInsertPanel(
+                        categories: store.categories, onInsert: insertQuickEntry,
+                        onInsertVariable: store.isEditingPhraseTemplate ? insertVariable : nil
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 case .phrases:
                     phrasesPanel
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -182,6 +196,26 @@ struct KeyboardSurface: View {
             guard !isCapsLocked else { return }
             isShifted = controller.autoShift
         }
+    }
+
+    /// Blind mode is on but nothing can be heard: the keyboard has not been
+    /// granted Allow Full Access. Read by VoiceOver too, so a user who cannot
+    /// see the row still learns why the keys are silent.
+    private var speechUnavailableBar: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "speaker.slash")
+                .font(.system(size: 13, weight: .semibold))
+            Text("To hear keys, allow Full Access in Settings › Keyboards › Steady")
+                .font(.system(size: 13, weight: .medium))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .foregroundStyle(palette.keyLabel)
+        .frame(maxWidth: .infinity)
+        .frame(height: SuggestionBar.rowHeight)
+        .padding(.horizontal, 12)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("speech-unavailable")
     }
 
     // MARK: Toolbar
@@ -323,7 +357,7 @@ struct KeyboardSurface: View {
                 )
             } else {
                 PhrasePicker(phrases: store.phrases) { template in
-                    let session = PhraseFillSession(template: template, names: store.allQuickInsertEntries)
+                    let session = PhraseFillSession(template: template, categories: store.categories)
                     // A phrase with no blanks has nothing to ask; it goes in
                     // on the tap, the same as one whose last blank was just
                     // answered.
@@ -400,14 +434,24 @@ struct KeyboardSurface: View {
         freeTextSlot != nil ? freeTextBuffer : sink
     }
 
+    /// What every key that puts something in does first: the iOS click, which
+    /// follows the system's Keyboard Clicks switch, and Steady's own haptic,
+    /// which follows the setting. Cursor moves stay silent and still.
+    private func keyFeedback(into target: TextSink) {
+        target.playKeyClick()
+        if store.settings.keyHaptics {
+            haptics.tap()
+        }
+    }
+
     private func insert(_ text: String) {
-        activeSink.playKeyClick()
+        keyFeedback(into: activeSink)
         composer.type(text, rules: controller.rules, into: activeSink)
         refresh()
     }
 
     private func deleteBackward() {
-        activeSink.playKeyClick()
+        keyFeedback(into: activeSink)
         composer.deleteBackward(into: activeSink)
         refresh()
     }
@@ -421,7 +465,7 @@ struct KeyboardSurface: View {
 
     /// One tick of holding the delete key.
     private func deleteWordBackward() {
-        activeSink.playKeyClick()
+        keyFeedback(into: activeSink)
         composer.deleteWordBackward(into: activeSink)
         refresh()
     }
@@ -434,8 +478,18 @@ struct KeyboardSurface: View {
     /// A name is one tap: it goes in and the keys come back, because the next
     /// thing the user wants is almost always to carry on typing.
     private func insertQuickEntry(_ entry: QuickInsertEntry) {
-        activeSink.playKeyClick()
+        keyFeedback(into: activeSink)
         composer.insertEntry(entry.text, rules: controller.rules, into: activeSink)
+        panel = .keyboard
+        refresh()
+    }
+
+    /// Writing a phrase template in the app: the blank for a category goes in
+    /// where a name would, spaced the same way, and the keys come back.
+    private func insertVariable(_ category: QuickInsertCategory) {
+        keyFeedback(into: activeSink)
+        composer.insertEntry(
+            QuickInsertCategory.blankMarker(for: category), rules: controller.rules, into: activeSink)
         panel = .keyboard
         refresh()
     }
@@ -443,7 +497,7 @@ struct KeyboardSurface: View {
     /// The finished sentence goes to the host — never into a phrase draft, so
     /// this writes to `sink` rather than `activeSink` — and the keys come back.
     private func insertPhrase(_ sentence: String) {
-        sink.playKeyClick()
+        keyFeedback(into: sink)
         composer.insert(
             sentence, rules: TypingRules(traits: sink.traits, settings: store.settings), into: sink)
         phraseSession = nil
@@ -457,7 +511,7 @@ struct KeyboardSurface: View {
     /// and a prediction follows the shift key, so a word picked at the start
     /// of a sentence is capital.
     private func pickSuggestion(_ word: String) {
-        activeSink.playKeyClick()
+        keyFeedback(into: activeSink)
         let capitalization: Capitalization
         if controller.suggestionsAreNextWord {
             capitalization = isCapsLocked ? .all : isShifted ? .first : .none

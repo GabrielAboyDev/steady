@@ -63,12 +63,13 @@ enum KeyTier {
 
     var isEmphasized: Bool { self == .mostLikely }
 
-    /// With the setting off, every tier but `impossible` reads as `unlikely`
-    /// — a plain, untinted key — while the impossible fade (a separate
-    /// setting) is untouched.
+    /// With the setting off, every tier reads as `unlikely` — a plain,
+    /// untinted key — including `impossible`. Its separate fade (dimmed
+    /// opacity, a smaller or hidden key) comes from resize strength, not
+    /// colour, and stays untouched by this setting.
     func effective(highlightNextLetter: Bool) -> KeyTier {
-        guard !highlightNextLetter, self != .impossible else { return self }
-        return .unlikely
+        guard highlightNextLetter else { return .unlikely }
+        return self
     }
 }
 

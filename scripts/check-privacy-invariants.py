@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 """Enforces the promises Steady makes about privacy.
 
-Steady's whole trust story is that it can't phone home and doesn't need "Allow
-Full Access". That's a claim in the README, in the onboarding copy, and in the
-PRD (FR-6) — so it should fail the build if it ever stops being true, rather
-than being rechecked by hand.
+Steady's whole trust story is that it can't phone home. That's a claim in the
+README, in the onboarding copy, and in the PRD (FR-6) — so it should fail the
+build if it ever stops being true, rather than being rechecked by hand.
+
+The keyboard does ask iOS to show the "Allow Full Access" switch, because iOS
+lets no keyboard play a sound without it and Blind mode speaks the keys. It is
+off by default, everything but speech works without it, and granting it must
+never buy the extension a network path — which is why the networking checks
+below scan every line of shipped code rather than trusting the plist.
 
 Run: python3 scripts/check-privacy-invariants.py
 """
@@ -58,7 +63,9 @@ def check_no_networking() -> None:
                 failures.append(f"{relative}:{line}: `import {match.group(1)}` is not allowed")
 
 
-def check_full_access_not_requested() -> None:
+def check_extension_declaration() -> None:
+    """The switch is a deliberate choice, declared explicitly so a dropped key
+    cannot quietly change what iOS offers the user."""
     plist_path = ROOT / "KeyboardExtension" / "Info.plist"
     with plist_path.open("rb") as handle:
         plist = plistlib.load(handle)
@@ -66,10 +73,10 @@ def check_full_access_not_requested() -> None:
     attributes = plist.get("NSExtension", {}).get("NSExtensionAttributes", {})
     if "RequestsOpenAccess" not in attributes:
         failures.append("KeyboardExtension/Info.plist: RequestsOpenAccess must be declared")
-    elif attributes["RequestsOpenAccess"] is not False:
+    elif attributes["RequestsOpenAccess"] is not True:
         failures.append(
-            "KeyboardExtension/Info.plist: RequestsOpenAccess must be false — "
-            "Steady must never ask for Allow Full Access"
+            "KeyboardExtension/Info.plist: RequestsOpenAccess must be true — "
+            "Blind mode cannot speak in other apps without the Allow Full Access switch"
         )
 
     point = plist.get("NSExtension", {}).get("NSExtensionPointIdentifier")
@@ -80,8 +87,9 @@ def check_full_access_not_requested() -> None:
 def check_app_transport_security() -> None:
     for path in sorted(ROOT.rglob("Info.plist")):
         # Skip build output: Xcode's own test-runner app ships an ATS exception
-        # we neither wrote nor can change.
-        if {".build", "build", "DerivedData"} & set(path.parts):
+        # we neither wrote nor can change. `.claude` holds agent worktrees,
+        # which carry their own derived data.
+        if {".build", "build", "DerivedData", ".claude"} & set(path.parts):
             continue
         with path.open("rb") as handle:
             plist = plistlib.load(handle)
@@ -163,7 +171,7 @@ def check_site_loads_nothing_third_party() -> None:
 
 def main() -> int:
     check_no_networking()
-    check_full_access_not_requested()
+    check_extension_declaration()
     check_app_transport_security()
     check_app_group_matches()
     check_no_third_party_dependencies()
@@ -178,7 +186,7 @@ def main() -> int:
 
     print("Privacy invariants hold:")
     print("  - no networking APIs in any shipped code")
-    print("  - RequestsOpenAccess is false (Full Access never requested)")
+    print("  - RequestsOpenAccess is declared (Full Access offered for sound only, off by default)")
     print("  - no arbitrary-loads ATS exceptions")
     print(f"  - app and extension share exactly {APP_GROUP}")
     print("  - no third-party dependencies")

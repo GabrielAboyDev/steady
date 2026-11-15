@@ -59,6 +59,13 @@ struct SettingsView: View {
                             detail: "Show three large completion chips above the keys."
                         )
                     }
+                    Toggle(isOn: $store.settings.keyHaptics) {
+                        settingLabel(
+                            "Haptic feedback",
+                            detail: "A light tap each time a key goes in."
+                        )
+                    }
+                    .accessibilityIdentifier("key-haptics")
                 }
 
                 Section("Browsing suggestions") {
@@ -98,42 +105,54 @@ struct SettingsView: View {
                 }
 
                 Section("Colour vision") {
-                    Picker("Colour vision", selection: $store.settings.colorVision) {
-                        ForEach(ColorVisionMode.allCases) { mode in
-                            Text(mode.title).tag(mode)
-                        }
+                    Toggle(isOn: $store.settings.nextLetterHighlight) {
+                        settingLabel(
+                            "Next letter highlight",
+                            detail:
+                                "Tint keys by how likely they are to come next, and ring and bold the single most likely one."
+                        )
                     }
-                    .pickerStyle(.segmented)
-                    .accessibilityIdentifier("color-vision")
-
-                    Text(store.settings.colorVision.explanation)
-                        .font(.system(size: 13))
-                        .foregroundStyle(Theme.textSecondary)
-                        // Two lines, whatever the phone: the copy is written
-                        // to fit, and this keeps a narrow screen honest.
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.85)
+                    .accessibilityIdentifier("next-letter-highlight")
 
                     // The tints are what carries "how likely is this letter",
                     // so the choice has to be made by looking, not by reading
-                    // the name of a condition.
-                    VStack(alignment: .leading, spacing: 6) {
-                        ResizePreviewRow(
-                            keyScales: previewController.keyScales,
-                            topScale: previewController.topScale,
-                            colorVision: store.settings.colorVision,
-                            highlightNextLetter: store.settings.nextLetterHighlight
-                        )
-                        Text(
-                            "The top row after typing “th”, tinted by how likely each letter is to come next."
-                        )
-                        .font(.system(size: 12))
-                        .foregroundStyle(Theme.textMuted)
+                    // the name of a condition. Grouped so the toggle above
+                    // stays reachable even while this is disabled.
+                    Group {
+                        Picker("Colour vision", selection: $store.settings.colorVision) {
+                            ForEach(ColorVisionMode.allCases) { mode in
+                                Text(mode.title).tag(mode)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .accessibilityIdentifier("color-vision")
+
+                        Text(store.settings.colorVision.explanation)
+                            .font(.system(size: 13))
+                            .foregroundStyle(Theme.textSecondary)
+                            // Two lines, whatever the phone: the copy is written
+                            // to fit, and this keeps a narrow screen honest.
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.85)
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            ResizePreviewRow(
+                                keyScales: previewController.keyScales,
+                                topScale: previewController.topScale,
+                                colorVision: store.settings.colorVision,
+                                highlightNextLetter: store.settings.nextLetterHighlight
+                            )
+                            Text(
+                                "The top row after typing “th”, tinted by how likely each letter is to come next."
+                            )
+                            .font(.system(size: 12))
+                            .foregroundStyle(Theme.textMuted)
+                        }
+                        .padding(.vertical, 4)
                     }
-                    .padding(.vertical, 4)
+                    // The tint has nothing to show once the highlight itself is off.
+                    .disabled(!store.settings.nextLetterHighlight)
                 }
-                // The tint has nothing to show once the highlight itself is off.
-                .disabled(!store.settings.nextLetterHighlight)
 
                 Section("Voice") {
                     NavigationLink {
@@ -164,6 +183,16 @@ struct SettingsView: View {
                     Text("Spoken in the voice chosen above. Works on its own, not alongside VoiceOver.")
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.textSecondary)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(
+                            "To hear keys in other apps, turn on Allow Full Access in Settings > General > Keyboard > Keyboards > Steady. iOS won't let a keyboard make a sound without it. Steady uses it only for that: it still makes no network calls, and the Practice tool speaks without it."
+                        )
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.textMuted)
+                        Button("Open Settings", action: KeyboardInstallState.openSettings)
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .padding(.vertical, 2)
                 }
 
                 Section("Typing") {
@@ -209,13 +238,6 @@ struct SettingsView: View {
                             "Text replacement",
                             detail: "Use the shortcuts from Settings > General > Keyboard > "
                                 + "Text Replacement, and know your contacts' names."
-                        )
-                    }
-                    Toggle(isOn: $store.settings.nextLetterHighlight) {
-                        settingLabel(
-                            "Next letter highlight",
-                            detail:
-                                "Tint keys by how likely they are to come next, and ring and bold the single most likely one."
                         )
                     }
                     Text(

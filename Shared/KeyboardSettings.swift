@@ -155,6 +155,12 @@ struct KeyboardSettings: Codable, Equatable {
     var keyboardAppearance: KeyboardAppearance = .system
     /// Which colour vision the key tints are drawn for.
     var colorVision: ColorVisionMode = .standard
+    /// Tint keys by how likely they are to come next, and ring and bold the
+    /// single most likely one. Off, every key keeps its plain, neutral face.
+    var nextLetterHighlight: Bool = true
+    /// A light tap from the Taptic Engine each time a key puts something in.
+    /// Off by default: the stock keyboard's own haptic is off until asked for.
+    var keyHaptics: Bool = false
     /// The voice the Practice tool reads typed text back in. `nil` is the
     /// system default for the current language — a raw `AVSpeechSynthesisVoice`
     /// identifier rather than an enum, since the voice list is device-dependent.
@@ -184,9 +190,6 @@ struct KeyboardSettings: Codable, Equatable {
     var textReplacement: Bool = true
     /// Offer the spell checker's guesses among the suggestions.
     var spellingSuggestions: Bool = true
-    /// Tint keys by how likely they are to come next, and ring and bold the
-    /// single most likely one. Off, every key keeps its plain, neutral face.
-    var nextLetterHighlight: Bool = true
 
     static let `default` = KeyboardSettings()
 
@@ -223,6 +226,10 @@ struct KeyboardSettings: Codable, Equatable {
         colorVision =
             try container.decodeIfPresent(
                 ColorVisionMode.self, forKey: .colorVision) ?? fallback.colorVision
+        nextLetterHighlight =
+            try container.decodeIfPresent(
+                Bool.self, forKey: .nextLetterHighlight) ?? fallback.nextLetterHighlight
+        keyHaptics = try container.decodeIfPresent(Bool.self, forKey: .keyHaptics) ?? fallback.keyHaptics
         ttsVoiceIdentifier =
             try container.decodeIfPresent(
                 String.self, forKey: .ttsVoiceIdentifier) ?? fallback.ttsVoiceIdentifier
@@ -243,8 +250,5 @@ struct KeyboardSettings: Codable, Equatable {
         spellingSuggestions =
             try container.decodeIfPresent(
                 Bool.self, forKey: .spellingSuggestions) ?? fallback.spellingSuggestions
-        nextLetterHighlight =
-            try container.decodeIfPresent(
-                Bool.self, forKey: .nextLetterHighlight) ?? fallback.nextLetterHighlight
     }
 }

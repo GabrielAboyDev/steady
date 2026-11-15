@@ -4,8 +4,12 @@ import UIKit
 /// The system-wide keyboard. Hosts the shared SwiftUI surface and writes
 /// through `textDocumentProxy` into whatever app the user is typing in.
 ///
-/// No network access and no "Allow Full Access" — the Info.plist sets
-/// `RequestsOpenAccess` to false and nothing here opens a connection (FR-6).
+/// No network access: nothing here opens a connection (FR-6). The Info.plist
+/// does set `RequestsOpenAccess`, which puts an "Allow Full Access" switch in
+/// iOS Settings, off by default. Typing, prediction, names and phrases all work
+/// without it. The one thing it unlocks is sound: iOS lets no keyboard start an
+/// audio session until the user grants it, so Blind mode cannot speak a key in
+/// another app until then. The surface says so in place of the suggestions.
 final class KeyboardViewController: UIInputViewController {
 
     private let store = SharedStore.shared
@@ -74,6 +78,10 @@ final class KeyboardViewController: UIInputViewController {
     /// cleared by the app) — recompute so the keys match reality.
     override func textDidChange(_ textInput: UITextInput?) {
         super.textDidChange(textInput)
+        // A field switch inside the Steady app may have moved focus onto, or
+        // off, the phrase editor's sentence — the one field that wants a
+        // blank offered rather than a name.
+        store.reloadEditingContext()
         refreshPredictions()
     }
 
@@ -86,7 +94,10 @@ final class KeyboardViewController: UIInputViewController {
             showsNextKeyboardKey: needsInputModeSwitchKey,
             onNextKeyboard: { [weak self] in self?.advanceToNextInputMode() },
             onCollapse: { [weak self] in self?.dismissKeyboard() },
-            sitsOnSystemBackdrop: true
+            sitsOnSystemBackdrop: true,
+            // Flipping the switch in Settings relaunches the extension, so a
+            // value read once at install time stays right for its lifetime.
+            canPlayAudio: hasFullAccess
         )
 
         let host = UIHostingController(rootView: surface)

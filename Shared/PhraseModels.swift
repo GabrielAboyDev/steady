@@ -131,18 +131,26 @@ struct PhraseChoice: Identifiable, Equatable {
 final class PhraseFillSession: ObservableObject {
 
     let template: PhraseTemplate
-    /// The user's saved names, offered for any slot that draws from them.
-    private let names: [QuickInsertEntry]
+    /// The user's Names categories. A slot that draws from names is offered
+    /// every entry; one named after a category, `{People}`, just that one.
+    private let categories: [QuickInsertCategory]
 
     @Published private(set) var values: [String: String] = [:]
     @Published private(set) var index: Int = 0
 
     private let slots: [PhraseSlot]
 
-    init(template: PhraseTemplate, names: [QuickInsertEntry]) {
+    init(template: PhraseTemplate, categories: [QuickInsertCategory]) {
         self.template = template
-        self.names = names
+        self.categories = categories
         self.slots = template.resolvedSlots
+    }
+
+    private var names: [QuickInsertEntry] { categories.flatMap(\.entries) }
+
+    /// The category this slot is named after, if there is one.
+    func category(for slot: PhraseSlot) -> QuickInsertCategory? {
+        categories.first { $0.name.caseInsensitiveCompare(slot.name) == .orderedSame }
     }
 
     var currentSlot: PhraseSlot? {
@@ -151,11 +159,19 @@ final class PhraseFillSession: ObservableObject {
 
     /// The choices to offer for the current slot.
     ///
-    /// A slot with nothing of its own to offer — no options, no free text —
-    /// falls back to the names too, so an unconfigured blank never dead-ends.
+    /// A slot named after a Names category — what the keyboard's Variable
+    /// tile writes — offers that category's entries. A slot with nothing of
+    /// its own to offer — no options, no free text — falls back to all the
+    /// names, so an unconfigured blank never dead-ends.
     var currentChoices: [PhraseChoice] {
         guard let slot = currentSlot else { return [] }
-        if slot.drawsFromNames || (slot.options.isEmpty && !slot.allowsFreeText) {
+        if slot.drawsFromNames {
+            return names.map { PhraseChoice(id: $0.id.uuidString, text: $0.text) }
+        }
+        if slot.options.isEmpty, let category = category(for: slot) {
+            return category.entries.map { PhraseChoice(id: $0.id.uuidString, text: $0.text) }
+        }
+        if slot.options.isEmpty, !slot.allowsFreeText {
             return names.map { PhraseChoice(id: $0.id.uuidString, text: $0.text) }
         }
         return slot.options.enumerated().map { option in

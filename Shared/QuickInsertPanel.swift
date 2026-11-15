@@ -6,6 +6,10 @@ struct QuickInsertPanel: View {
 
     let categories: [QuickInsertCategory]
     let onInsert: (QuickInsertEntry) -> Void
+    /// Set while the host field is a phrase template being written. The
+    /// grid then leads with a Variable tile that writes a `{Category}` blank
+    /// for the open category, ahead of the names themselves.
+    var onInsertVariable: ((QuickInsertCategory) -> Void)? = nil
 
     @State private var selectedCategoryID: UUID?
     /// Follows the same palette as the keys and toolbar, so the panel matches
@@ -56,6 +60,28 @@ struct QuickInsertPanel: View {
     private var entryGrid: some View {
         ScrollView {
             LazyVGrid(columns: quickInsertGridColumns, spacing: 10) {
+                if let onInsertVariable, let category = selectedCategory {
+                    Button {
+                        onInsertVariable(category)
+                    } label: {
+                        VStack(spacing: 2) {
+                            Text("Variable")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(palette.highlightLabel.opacity(0.8))
+                            Text(QuickInsertCategory.blankMarker(for: category))
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundStyle(palette.highlightLabel)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 60)
+                        .background(palette.highlightFill)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("insert-variable")
+                    .accessibilityLabel("Insert a \(category.name) blank")
+                }
                 ForEach(selectedCategory?.entries ?? []) { entry in
                     Button {
                         onInsert(entry)

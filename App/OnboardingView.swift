@@ -68,7 +68,30 @@ struct OnboardingView: View {
                 title: "Switch with the globe 🌐",
                 detail: "In any app, hold the globe key and pick Steady to start typing."
             )
+            fullAccessNote
         }
+    }
+
+    /// Not a step: Steady types, predicts and inserts names and phrases
+    /// without Full Access, so most people never touch the switch. It is
+    /// here because iOS shows it next to the keyboard and asks nothing
+    /// politely, and because Blind mode in other apps is silent without it.
+    private var fullAccessNote: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("About “Allow Full Access”")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.textPrimary)
+            Text(
+                "You can leave it off. Steady makes no network calls either way. Turn it on only if you use Blind mode and want to hear each key in other apps: iOS doesn't let a keyboard play sound without it."
+            )
+            .font(.system(size: 14))
+            .foregroundStyle(Theme.textSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(Theme.brandSoft.opacity(0.6))
+        .clipShape(RoundedRectangle(cornerRadius: Theme.cardRadius))
     }
 
     private func stepCard(number: Int, title: String, detail: String) -> some View {

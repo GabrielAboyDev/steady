@@ -33,7 +33,8 @@ struct SuggestionBar: View {
     /// the stock keys begin. Below the 44pt touch minimum on purpose — the
     /// words are the full width of a third of the row, which is what makes
     /// them hittable.
-    private let rowHeight: CGFloat = 32
+    static let rowHeight: CGFloat = 32
+    private var rowHeight: CGFloat { Self.rowHeight }
     private let perPage = 3
     /// Wide enough for most words at 17pt, and the cell scales text down from
     /// there. Scrolling needs a real width — `maxWidth: .infinity` collapses

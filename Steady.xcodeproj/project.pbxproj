@@ -39,6 +39,7 @@
 		1C0000000000000000000015 /* KeyboardSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000016 /* KeyboardSurface.swift */; };
 		1C0000000000000000000090 /* KeySpeaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000090 /* KeySpeaker.swift */; };
 		1C0000000000000000000091 /* BlindModeOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000091 /* BlindModeOverlay.swift */; };
+		1C0000000000000000000092 /* KeyHaptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000092 /* KeyHaptics.swift */; };
 		1D0000000000000000000016 /* KeyboardViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000017 /* KeyboardViewController.swift */; };
 		1D0000000000000000000017 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B000000000000000000000A /* AppGroup.swift */; };
 		1D0000000000000000000018 /* KeyboardSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B000000000000000000000B /* KeyboardSettings.swift */; };
@@ -55,6 +56,7 @@
 		1D0000000000000000000023 /* KeyboardSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000016 /* KeyboardSurface.swift */; };
 		1D0000000000000000000090 /* KeySpeaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000090 /* KeySpeaker.swift */; };
 		1D0000000000000000000091 /* BlindModeOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000091 /* BlindModeOverlay.swift */; };
+		1D0000000000000000000092 /* KeyHaptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0000000000000000000092 /* KeyHaptics.swift */; };
 		1E0000000000000000000024 /* SteadyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B000000000000000000001A /* SteadyUITests.swift */; };
 		1E0000000000000000000025 /* ExtensionInHostAppTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B000000000000000000001B /* ExtensionInHostAppTest.swift */; };
 		1E0000000000000000000026 /* StoreCaptureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B000000000000000000001C /* StoreCaptureTests.swift */; };
@@ -127,6 +129,7 @@
 		1B0000000000000000000016 /* KeyboardSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardSurface.swift; sourceTree = "<group>"; };
 		1B0000000000000000000090 /* KeySpeaker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeySpeaker.swift; sourceTree = "<group>"; };
 		1B0000000000000000000091 /* BlindModeOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlindModeOverlay.swift; sourceTree = "<group>"; };
+		1B0000000000000000000092 /* KeyHaptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyHaptics.swift; sourceTree = "<group>"; };
 		1B0000000000000000000017 /* KeyboardViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardViewController.swift; sourceTree = "<group>"; };
 		1B0000000000000000000018 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1B0000000000000000000019 /* SteadyKeyboard.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SteadyKeyboard.entitlements; sourceTree = "<group>"; };
@@ -238,6 +241,7 @@
 				1B0000000000000000000016 /* KeyboardSurface.swift */,
 				1B0000000000000000000090 /* KeySpeaker.swift */,
 				1B0000000000000000000091 /* BlindModeOverlay.swift */,
+				1B0000000000000000000092 /* KeyHaptics.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -420,6 +424,7 @@
 				1C0000000000000000000015 /* KeyboardSurface.swift in Sources */,
 				1C0000000000000000000090 /* KeySpeaker.swift in Sources */,
 				1C0000000000000000000091 /* BlindModeOverlay.swift in Sources */,
+				1C0000000000000000000092 /* KeyHaptics.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -445,6 +450,7 @@
 				1D0000000000000000000023 /* KeyboardSurface.swift in Sources */,
 				1D0000000000000000000090 /* KeySpeaker.swift in Sources */,
 				1D0000000000000000000091 /* BlindModeOverlay.swift in Sources */,
+				1D0000000000000000000092 /* KeyHaptics.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

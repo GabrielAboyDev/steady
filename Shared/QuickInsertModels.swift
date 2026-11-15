@@ -19,6 +19,14 @@ struct QuickInsertCategory: Codable, Equatable, Identifiable {
 
 extension QuickInsertCategory {
 
+    /// The `{Category}` marker a phrase template uses to draw a blank from
+    /// this category. Braces inside the name are dropped so the marker
+    /// always closes where it should.
+    static func blankMarker(for category: QuickInsertCategory) -> String {
+        let name = category.name.filter { $0 != "{" && $0 != "}" }.trimmingCharacters(in: .whitespaces)
+        return "{\(name)}"
+    }
+
     /// Demo content for the UI tests and the store captures.
     ///
     /// This is NOT shipped. A fresh install has no names at all — see

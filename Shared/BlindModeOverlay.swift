@@ -31,8 +31,12 @@ extension KeyID {
         case .character(let character):
             if let name = Self.punctuationNames[character] { return name }
             guard character.isLetter else { return String(character) }
-            // Spoken uppercase: a lowercase "a" is read as the article.
-            let letter = String(character).uppercased()
+            // Spoken lowercase: the system voices read a lone uppercase
+            // letter as "capital A" of their own accord, so an uppercase
+            // key name would hear "capital" whether or not shift was down.
+            // `KeySpeaker` pins the one ambiguous letter, "a", to its name
+            // so it is not read as the article.
+            let letter = String(character).lowercased()
             let isCapital = context.plane == .letters && (context.isShifted || context.isCapsLocked)
             return isCapital ? "capital \(letter)" : letter
         case .space: return "space"

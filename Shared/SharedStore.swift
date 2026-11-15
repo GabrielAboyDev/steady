@@ -12,6 +12,7 @@ final class SharedStore: ObservableObject {
         static let categories = "quickInsert.categories.v1"
         static let phrases = "phrases.v1"
         static let keyboardLastRun = "keyboard.lastRun.v1"
+        static let editingPhraseTemplate = "phrases.editingTemplate.v1"
     }
 
     @Published var settings: KeyboardSettings = .default {
@@ -30,6 +31,29 @@ final class SharedStore: ObservableObject {
     /// *and* that the app group round-trips (US-005 / US-006).
     var keyboardLastRun: Date? {
         AppGroup.defaults.object(forKey: Key.keyboardLastRun) as? Date
+    }
+
+    /// True while the app's phrase editor has its Sentence field focused.
+    ///
+    /// The keyboard cannot tell one host field from another, so the app says
+    /// so itself through the app group. While it is set, the Names panel
+    /// offers a blank for the open category — `{People}` — ahead of the names,
+    /// since a sentence being written as a template wants the variable, not
+    /// one particular value. The editor clears it the moment focus leaves the
+    /// field, the screen, or the app.
+    @Published private(set) var isEditingPhraseTemplate = false
+
+    /// Called by the phrase editor as the Sentence field gains and loses focus.
+    func noteEditingPhraseTemplate(_ editing: Bool) {
+        AppGroup.defaults.set(editing, forKey: Key.editingPhraseTemplate)
+        isEditingPhraseTemplate = editing
+    }
+
+    /// Re-read just the editing flag. The extension calls this whenever the
+    /// host's field changes under it: a full `reload` is for coming on screen.
+    func reloadEditingContext() {
+        let editing = AppGroup.defaults.bool(forKey: Key.editingPhraseTemplate)
+        if editing != isEditingPhraseTemplate { isEditingPhraseTemplate = editing }
     }
 
     /// Suppresses persistence while loading from disk.
@@ -54,6 +78,7 @@ final class SharedStore: ObservableObject {
         // write. Both panels already explain how to add the first one.
         categories = decode([QuickInsertCategory].self, from: defaults.data(forKey: Key.categories)) ?? []
         phrases = decode([PhraseTemplate].self, from: defaults.data(forKey: Key.phrases)) ?? []
+        reloadEditingContext()
     }
 
     /// Called by the extension so the app can tell the keyboard has been used.
@@ -80,7 +105,10 @@ final class SharedStore: ObservableObject {
     /// install — a real one starts empty.
     func resetToDemoContent() {
         let defaults = AppGroup.defaults
-        for key in [Key.settings, Key.categories, Key.phrases, Key.keyboardLastRun] {
+        let keys = [
+            Key.settings, Key.categories, Key.phrases, Key.keyboardLastRun, Key.editingPhraseTemplate,
+        ]
+        for key in keys {
             defaults.removeObject(forKey: key)
         }
         reload()

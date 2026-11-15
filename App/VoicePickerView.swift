@@ -1,21 +1,17 @@
 import AVFoundation
 import SwiftUI
 
-/// Lists installed voices for the current language, letting the user pick
-/// which one the Practice tool reads text back in. Tapping a row selects it
-/// and plays a short sample — the same "select and preview in one tap"
-/// pattern ChatGPT's voice picker uses, rather than a separate preview button.
+/// Lists installed human-sounding voices for the current language, letting
+/// the user pick which one the Practice tool and Blind mode speak in. Tapping
+/// a row selects it and plays a short sample — the same "select and preview
+/// in one tap" pattern ChatGPT's voice picker uses, rather than a separate
+/// preview button. Novelty and formant voices are left out on purpose.
 struct VoicePickerView: View {
 
     @Binding var selection: String?
     @StateObject private var preview = VoicePreviewPlayer()
 
-    private let voices: [AVSpeechSynthesisVoice] = {
-        let languageCode = Locale.current.language.languageCode?.identifier ?? "en"
-        return AVSpeechSynthesisVoice.speechVoices()
-            .filter { $0.language.hasPrefix(languageCode) }
-            .sorted { $0.name < $1.name }
-    }()
+    private let voices = AVSpeechSynthesisVoice.humanVoices()
 
     var body: some View {
         List {
@@ -61,11 +57,7 @@ private final class VoicePreviewPlayer: NSObject, ObservableObject {
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
         try? AVAudioSession.sharedInstance().setActive(true)
         let utterance = AVSpeechUtterance(string: sample)
-        if let voiceIdentifier, let voice = AVSpeechSynthesisVoice(identifier: voiceIdentifier) {
-            utterance.voice = voice
-        } else {
-            utterance.voice = AVSpeechSynthesisVoice(language: AVSpeechSynthesisVoice.currentLanguageCode())
-        }
+        utterance.voice = .preferred(identifier: voiceIdentifier)
         synthesizer.speak(utterance)
     }
 }
