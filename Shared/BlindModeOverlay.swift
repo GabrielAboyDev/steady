@@ -173,6 +173,10 @@ struct BlindSubmitKey: View {
             .clipShape(RoundedRectangle(cornerRadius: 6))
             .accessibilityAddTraits(.isButton)
             .accessibilityLabel("Submit")
+            // A real `Button` gets this identifier for free, defaulted from
+            // its title; a plain `Text` wearing the button trait by hand
+            // does not, so `app.buttons["Submit"]` needs it spelled out.
+            .accessibilityIdentifier("Submit")
             .blindTarget(.submit, spokenName: "submit") { nil }
     }
 }
