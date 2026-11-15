@@ -165,19 +165,24 @@ struct BlindSubmitKey: View {
     @Environment(\.keyboardPalette) private var palette
 
     var body: some View {
-        Text("Submit")
-            .font(.system(size: 14, weight: .semibold))
-            .foregroundStyle(.white)
-            .frame(width: Self.width, height: Self.height)
-            .background(palette.accent)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-            .accessibilityAddTraits(.isButton)
-            .accessibilityLabel("Submit")
-            // A real `Button` gets this identifier for free, defaulted from
-            // its title; a plain `Text` wearing the button trait by hand
-            // does not, so `app.buttons["Submit"]` needs it spelled out.
-            .accessibilityIdentifier("Submit")
-            .blindTarget(.submit, spokenName: "submit") { nil }
+        // A real `Button` — the touch overlay above it claims every touch in
+        // blind mode, so this never actually fires — rather than a `Text`
+        // wearing the button trait by hand, because only a real button is
+        // typed as one for `app.buttons["Submit"]` to find: a manually
+        // tagged `Text` can carry the trait without picking up the element
+        // type XCTest's `.buttons` query filters on.
+        Button {
+        } label: {
+            Text("Submit")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: Self.width, height: Self.height)
+                .background(palette.accent)
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Submit")
+        .blindTarget(.submit, spokenName: "submit") { nil }
     }
 }
 
